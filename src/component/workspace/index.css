@@ -1,0 +1,28 @@
+.workspace{
+    height: 100%;
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    overflow: hidden;
+    background-color: white;
+}
+
+.anchor {
+    border: 2px greenyellow solid;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.row {
+    display: flex; 
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+
+}

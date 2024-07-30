@@ -1,0 +1,13 @@
+.pageContainer{
+    height: 100vh;
+    width:100vw;
+    overflow: hidden;
+    display: flex; 
+    flex-direction: row;
+}
+
+.navigationBar {
+    width: 100px;
+    height: 100%;
+    background-color: bisque;    
+}
