@@ -13,6 +13,7 @@
 .anchor {
     border: 2px greenyellow solid;
     border-radius: 5px;
+    background-color:pink;
     box-sizing: border-box;
 }
 

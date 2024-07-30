@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-const distance: number = 10;
+const distance: number = 20;
 type ResizeCallBack = (param: {
   width: number;
   height: number;
@@ -16,10 +16,9 @@ export default function ResizeBox({
   maxWidth,
   onResize,
   children,
-  marginLeft: ml,
-  marginBottom: mb,
+  display
 }: {
-  resizeMode: "horizontal" | "vertical";
+  resizeMode: "horizontal" | "vertical" | "left" | "top" | "bottom" | "right" | "none";
   minHeight: number;
   maxHeight: number;
   minWidth: number;
@@ -30,6 +29,7 @@ export default function ResizeBox({
   children: React.ReactElement;
   marginLeft?: number;
   marginBottom?: number;
+  display?: "row" | "column"
 }) {
   const refContainer = useRef<HTMLDivElement | null>(null);
   const [cursorType, setCursorType] = useState<
@@ -45,41 +45,37 @@ export default function ResizeBox({
     setHeight(originalHeight);
     setWidth(originalWidth);
   }, [originalHeight, originalWidth]);
+
   const handleMove = useCallback(
     (event: React.MouseEvent) => {
-      console.log("=================>handleMove",event);
+      event.stopPropagation();
       if (refContainer.current && allowResize) {
         if (cursorType === "col-resize") {
           let tempWidth = width + event.movementX;
-          if (resizeStart === "start") {
-            tempWidth = width - event.movementX;
-          }
-          tempWidth =tempWidth > maxWidth? maxWidth: tempWidth < minWidth? minWidth: tempWidth;
-          setWidth(tempWidth);
+          tempWidth = (tempWidth > maxWidth ? maxWidth : (tempWidth < minWidth ? minWidth : tempWidth));
           onResize({
             width: tempWidth,
             height: height,
-            scaleWidth:resizeStart === "start" ? -event.movementX : event.movementX,
+            scaleWidth: tempWidth > maxWidth ? 0 : tempWidth < minWidth ? 0 : event.movementX,
             scaleHeight: 0,
           });
         } else if (cursorType === "row-resize") {
           let tempHeight = height + event.movementY;
-          if (resizeStart === "start") {
-            tempHeight = height - event.movementY;
-          }
           tempHeight =
             tempHeight > maxHeight
               ? maxHeight
               : tempHeight < minHeight
-              ? minHeight
-              : tempHeight;
-          setHeight(tempHeight);
+                ? minHeight
+                : tempHeight;
           onResize({
             width: width,
             height: tempHeight,
-            scaleWidth:
-              resizeStart === "start" ? -event.movementY : event.movementX,
-            scaleHeight: 0,
+            scaleWidth: 0,
+            scaleHeight: tempHeight > maxHeight
+              ? 0
+              : tempHeight < minHeight
+                ? 0
+                : event.movementY,
           });
         }
       } else if (refContainer.current && !allowResize) {
@@ -107,6 +103,18 @@ export default function ResizeBox({
           } else {
             setResizeStart("end");
           }
+        } else if (resizeMode === "top" && (event.clientY - top < distance && event.clientY - top > 0)) {
+          setCursorType("row-resize");
+          setResizeStart("start");
+        } else if (resizeMode === "bottom" && (bottom - event.clientY < distance && bottom - event.clientY > 0)) {
+          setCursorType("row-resize");
+          setResizeStart("end");
+        } else if (resizeMode === "left" && (event.clientX - left < distance && event.clientX - left > 0)) {
+          setCursorType("col-resize");
+          setResizeStart("start")
+        } else if (resizeMode === "right" && (right - event.clientX < distance && right - event.clientX > 0)) {
+          setCursorType("col-resize");
+          setResizeStart("end")
         } else {
           setCursorType("auto");
           setResizeStart("none");
@@ -132,7 +140,10 @@ export default function ResizeBox({
     ]
   );
 
+
+
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
     if (refContainer.current) {
       const { left, right, top, bottom } =
         refContainer.current.getBoundingClientRect();
@@ -156,6 +167,19 @@ export default function ResizeBox({
     setAllowResize(false);
     setCursorType("auto");
   }, []);
+
+
+  const getPadding = () => {
+    switch (resizeMode) {
+      case "horizontal": return "0px 5px";
+      case "vertical": return "5px 0px";
+      case "left": return "0px 0px 0px 5px";
+      case "top": return "5px 0px 0px 0px";
+      case "bottom": return "0px 0px 5px 0px";
+      case "right": return "0px 5px 0px 0px";
+      case "none": return "0px";
+    }
+  }
   return (
     <div
       ref={refContainer}
@@ -168,10 +192,12 @@ export default function ResizeBox({
         height: height + "px",
         width: width + "px",
         cursor: cursorType,
-        padding: resizeMode === "horizontal" ? "0px 5px" : "5px 0px",
-        marginBottom: mb ? mb + "px" : undefined,
-        marginLeft: ml ? ml + "px" : undefined,
+        padding: getPadding(),
         boxSizing: "border-box",
+        display: 'flex',
+        flexDirection: display,
+        flexShrink: "0",
+        overflow: "hidden"
       }}
     >
       {children}

@@ -2,102 +2,10 @@ import React, { useCallback, useState, useRef, useEffect } from "react";
 import "./index.css";
 import ResizeBox from "../resize-box";
 import { useResize } from "../../hooks";
+import {TreeConfig,ComponentConfig, generateTreeConfig, ParentPosition} from "./type";
+import { checkPointInArea } from "./util";
 
 type GenerateComponent = () => React.ReactElement;
-type ComponentConfig = {
-  row: number;
-  column: number;
-};
-
-type TreeConfig = Array<RowConfig>;
-
-type RowConfig = {
-  height: number;
-  minHeight: number;
-  maxHeight: number;
-  children: Array<ChildConfig>;
-};
-
-type ChildConfig = {
-  height: number;
-  minHeight: number;
-  maxHeight: number;
-  width: number;
-  minWidth: number;
-  maxWidth: number;
-  child: React.ReactElement;
-};
-
-const rowMinHeight = 100;
-const columnMinWidth = 100;
-/// left,right,top,bottom based on parent;
-class TreeConfig {
-  left:number;
-  right:number;
-  top:number;
-  bottom:number;
-  minWidth:number;
-  maxWidth:number;
-  maxHeight:number;
-  minHeight:number;
-  children?:Array<TreeConfig>;
-  child?:TreeConfig;
-
-  constructor(left:number,right:number,top:number,bottom:number,minWidth:number,maxWidth:number,maxHeight:number,minHeight:number,option?:{children?:Array<TreeConfig>,child?:TreeConfig}){
-    this.left = left;
-    this.right = right;
-    this.top = top;
-    this.bottom = bottom;
-    this.minWidth = minWidth;
-    this.maxWidth = maxWidth;
-    this.maxHeight = maxHeight;
-    this.minHeight = minHeight;
-    this.child = option?.child;
-    this.children = option?.children;
-  }
-
-  getLeft = (viewWidth:number):number => {
-    return this.left * viewWidth;
-  }
-
-  getRight = (viewWidth:number):number => {
-    return this.right * viewWidth;
-  }
-
-  getTop = (viewHeight:number):number => {
-    return this.top * viewHeight;
-  }
-
-  getBottom = (viewHeight:number):number => {
-    return this.bottom * viewHeight
-  }
-
-  getWidth = (viewWidth:number):number => {
-    return (this.right - this.left) * viewWidth
-  }
-
-  getMinWidth = (viewWidth:number):number => {
-    return (this.bottom - this.top) * viewWidth
-  }
-
-  getMaxWidth = (viewWidth:number):number => {
-    return (this.bottom - this.top) * viewWidth
-  }
-
-  getHeight = (viewHeight:number):number => {
-    return (this.bottom - this.top) * viewHeight
-  }
-
-  getMinHeight = (viewHeight:number):number => {
-    return (this.bottom - this.top) * viewHeight
-  }
-
-  getMaxHeight = (viewHeight:number):number => {
-    return (this.bottom - this.top) * viewHeight
-  }
-
-}
-
 
 export default function Workspace({
   panels,
@@ -106,12 +14,10 @@ export default function Workspace({
   panels: { [key: string]: GenerateComponent };
 }) {
   const [anchorVisible, setAnchorVisible] = useState<boolean>(false);
-  const [items, setItems] = useState<TreeConfig>([]);
+  const [items, setItems] = useState<Array<TreeConfig>>([]);
   const container = useRef<HTMLDivElement | null>(null);
-  const [rectStyle, setRectStyle] = useState<{[key:string]:string}>({
-    position: "absolute",
-  });
-  const [config, setConfig] = useState<ComponentConfig>({ row: 0, column: 0 });
+  const [rectStyle, setRectStyle] = useState<{[key:string]:string}>({position: "absolute",});
+  const [config, setConfig] = useState<ComponentConfig | null>(null);
   const { width, height } = useResize(container);
 
   useEffect(()=>{
@@ -131,316 +37,126 @@ export default function Workspace({
   },[])
 
 
-  const removeAllDragble = useCallback((ele: HTMLElement) => {
-    ele.draggable = false;
-    if (ele.children && ele.children.length !== 0) {
-      for (const element of ele.children) {
-        removeAllDragble(element as HTMLElement);
-      }
-    }
-  }, []);
-
   const handleOnDrap = useCallback(
     (ev: React.DragEvent) => {
       ev.preventDefault();
       setAnchorVisible(false);
-      let item:RowConfig | null = null;
       const targetPanel = ev.dataTransfer.getData("text");
-      console.log(targetPanel);
-      let temp:Array<RowConfig> = [...items];
-      if(config.row === -1  || config.row >= items.length){
-        const totalHeight =items.reduce((pre, current) => pre + current.height, 0) +(items.length - 1) * 10;
-        if (height - totalHeight < 10) {
-          const perH = (height - temp.length * 10) / (temp.length + 1);
-          const maxHeight = height - temp.length * 10 - (temp.length + 1) * rowMinHeight;
-          temp.forEach((ele) => {
-            ele.height = perH;
-            ele.maxHeight =
-              height - temp.length * 10 - temp.length * rowMinHeight;
-            ele.children.forEach((e) => {
-              e.height = perH;
-            });
-          });
-          item = {
-            height: perH,
-            minHeight: rowMinHeight,
-            maxHeight: maxHeight,
-            children: [
-              {
-                height: perH,
-                minHeight: rowMinHeight,
-                maxHeight: maxHeight,
-                width: width,
-                minWidth: 100,
-                maxWidth: width,
-                child: panels[targetPanel](),
-              },
-            ],
+      if(targetPanel === ""){
+        return;
+      }
+      const findTarget = (tree:TreeConfig,view:ParentPosition,target:string):{target:TreeConfig,view:ParentPosition} | null=>{
+          if(tree.key === target){
+            return {target:tree,view:tree.getCurrentPosition(view)}
+          }else if(tree.child){
+            return null;
           }
-        } else {
-          const rowHeight = height - totalHeight - 10;
-          console.log(panels[targetPanel])
-          item = {
-            height: rowHeight,
-            minHeight: rowMinHeight,
-            maxHeight: height - temp.length * 10 - temp.length * rowMinHeight,
-            children: [
-              {
-                height: rowHeight,
-                minHeight: rowMinHeight,
-                maxHeight:
-                  height - temp.length * 10 - temp.length * rowMinHeight,
-                width: width,
-                minWidth: 100,
-                maxWidth: width,
-                child: panels[targetPanel](),
-              },
-            ],
-          };
-        }
-        if(config.row === -1){
-            temp =[item,...temp];
-        }else{
-            temp = [...temp,item];
-        }
-        setItems(temp);
-      } else {
-        const temp = Array.from(items);
-        const row = temp[config.row];
-        const totalWidth =
-          row.children.reduce((pre, current) => pre + current.width, 0) +
-          (row.children.length - 1) * 10;
-        if (width - totalWidth < 10) {
-          const perW =
-            (width - row.children.length * 10) / (row.children.length + 1);
-          const maxW =
-            width -
-            row.children.length * 10 -
-            columnMinWidth * row.children.length;
-          row.children.map((ele) => {
-            ele.width = perW;
-            ele.maxWidth = maxW;
-          });
-          if (config.column > row.children.length) {
-            row.children.push({
-              minHeight: row.minHeight,
-              maxHeight: row.maxHeight,
-              height: row.height,
-              width: perW,
-              maxWidth: maxW,
-              minWidth: columnMinWidth,
-              child: panels[targetPanel](),
-            });
-          } else {
-            row.children = [
-              ...row.children.slice(0, config.column),
-              ...[
-                {
-                  minHeight: row.minHeight,
-                  maxHeight: row.maxHeight,
-                  height: row.height,
-                  width: perW,
-                  maxWidth: maxW,
-                  minWidth: columnMinWidth,
-                  child: panels[targetPanel](),
-                },
-              ],
-              ...row.children.slice(config.column),
-            ];
+           const realPosition = tree.getCurrentPosition(view);
+          for(const item of tree.children!){
+            let result = findTarget(item,realPosition,target);
+            if(result){
+              return result;
+            }
           }
-        } else {
-          const columnWidth = width - totalWidth - 10;
-          const maxW =
-            width -
-            row.children.length * 10 -
-            columnMinWidth * row.children.length;
-          if (config.column > row.children.length) {
-            row.children.push({
-              minHeight: row.minHeight,
-              maxHeight: row.maxHeight,
-              height: row.height,
-              width: columnWidth,
-              maxWidth: maxW,
-              minWidth: columnMinWidth,
-              child: panels[targetPanel](),
-            });
-          } else {
-            row.children = [
-              ...row.children.slice(0, config.column),
-              ...[
-                {
-                  minHeight: row.minHeight,
-                  maxHeight: row.maxHeight,
-                  height: row.height,
-                  width: columnWidth,
-                  maxWidth: maxW,
-                  minWidth: columnMinWidth,
-                  child: panels[targetPanel](),
-                },
-              ],
-              ...row.children.slice(config.column),
-            ];
-          }
-        }
 
-        temp[config.row] = row;
-        setItems(temp);
+          return null;
+      }
+      
+      if(config && config.target === "root"){
+        let tree =  generateTreeConfig(null,{width:width,height:height,left:0,top:0},config,panels[targetPanel](),targetPanel);
+        setItems([tree]);
+      }else if(config){
+        const result = findTarget(items[0],{width:width,height:height,left:0,top:0},config.target)
+        if(result){
+          generateTreeConfig(result.target,result.view,config,panels[targetPanel](),targetPanel);
+          setItems([...items])
+        }
+        console.log(items[0])
       }
       ev.dataTransfer.clearData();
-      requestAnimationFrame(() => {
-        removeAllDragble(container.current as HTMLElement);
-      });
     },
-    [items, panels, config, removeAllDragble, width, height]
+    [items, panels, config, width, height]
   );
 
   const handleDragOver = useCallback(
     (ev: React.DragEvent) => {
       ev.preventDefault();
-      console.log(ev);
-      let temp = {...rectStyle};
+      let tempStyle = {...rectStyle};
+      let tempItems = [...items];
       if (container.current && ev.dataTransfer.effectAllowed === "copy") {
-        const { left, top } = container.current.getBoundingClientRect();
-        const x = ev.clientX;
-        const y = ev.clientY;
-        const total = items.reduce((pre, current) => pre + current.height, 0) + (items.length -1) * 10;
-        let currentY = 0;
-        let currentHeight = 0;
-        for (let index = 0; index < items.length; index++) {
-          currentHeight = currentHeight + items[index].height + (index > 0 ? 10 : 0);
-          if (y < currentHeight + top) {
-            break;
-          }
-          currentY++;
-        }
-        if (currentY === items.length - 1 && y - top > height * 0.9) {
-          temp = {
-            ...rectStyle,
-            top: height * 0.9 + "px",
-            left: "0px",
-            height: height * 0.1 + "px",
-            width: "100%",
-          };
-          setConfig({ row: items.length, column: 0 });
-        } else if (currentY >= items.length) {
-          setConfig({ row: currentY, column: 0 });
-           temp = {
-            ...rectStyle,
-            top: total + "px",
-            left: "0px",
-            height: height - total + "px",
-            width: "100%",
-          };
-        } else {
-          const targetTop = items.slice(0, currentY).reduce((pre, current) => pre + current.height, 0) +currentY * 10;
-          let currentX = 0;
-          const children = items[currentY].children;
-          let currentWidth = 0;
-          for (let index = 0; index < children.length; index++) {
-            currentWidth =
-              currentWidth + children[index].width + (index > 0 ? 10 : 0);
-            if (x < currentWidth + left) {
-              break;
-            }
-            currentX++;
-          }
-          if(children.length === 1 && items.length === 1 && items[0].height === height && items[0].children[0].width === width){
-            if(y < top + height/2 ){
-                temp = {
-                    ...rectStyle,
-                    top: 0 + "px",
-                    left: 0 + "px",
-                    height: items[0].height/2 + "px",
-                    width: "100%",
-                  };
-                  currentY = -1;
-                  currentX = 0;
-            }else if(y > top + height/2){
-                temp = {
-                    ...rectStyle,
-                    top: items[0].height/2 + "px",
-                    left: 0 + "px",
-                    height: items[0].height/2 + "px",
-                    width: width + "px",
-                  };
-                  currentY = 1;
-                  currentX = 0;
-            }else if(x < left + width/2){
-                temp = {
-                    ...rectStyle,
-                    top: 0 + "px",
-                    left: 0 + "px",
-                    height: items[0].height + "px",
-                    width: width/2 + "px",
-                  };
-                  currentY = 0;
-                  currentX = 0;
-            }else if(x > left + width/2){
-                temp = {
-                    ...rectStyle,
-                    top: 0 + "px",
-                    left: width/2 + "px",
-                    height: items[0].height + "px",
-                    width: width/2 + "px",
-                  };
-                  currentY = 0;
-                  currentX = 1;
-            }
-          }else if(items[currentY].children.length === 1 && items[currentY].children[0].width === width && x < left + items[currentY].children[0].width/2){
-            temp = {
-                ...rectStyle,
-                top: targetTop + "px",
-                left: 0 + "px",
-                height: items[currentY].height + "px",
-                width: width /2 + "px",
-              };
-              currentX = 0
-        }else if(items[currentY].children.length === 1 && items[currentY].children[0].width === width && x > left + items[currentY].children[0].width/2){
-            temp = {
-                ...rectStyle,
-                top: targetTop + "px",
-                left: items[currentY].children[0].width/2  + "px",
-                height: items[currentY].height + "px",
-                width: width /2 + "px",
-              };
-              currentX = 0
-        }else if (currentX < children.length) {
-            const targetLeft =
-              children.slice(0, currentX).reduce((pre, current) => pre + current.width, 0) +currentX * 10;
-            temp = {
-              ...rectStyle,
-              top: targetTop + "px",
-              left: targetLeft + "px",
-              height: children[currentX].height + "px",
-              width: children[currentX].width + "px",
-            };
-          } else {
-            const target =
-              children.reduce((pre, current) => pre + current.width, 0) +
-              children.length * 10;
-            temp = {
-              ...rectStyle,
-              top: targetTop + "px",
-              left: target + "px",
-              height: items[currentY].height + "px",
-              width: width - target + "px",
-            };
-          }
+        const rect = container.current.getBoundingClientRect();
+        const { left, top} = rect;
+        const x = ev.clientX -left;
+        const y = ev.clientY - top;
+        if(tempItems.length === 0){
+           setConfig({target:"root",layout:"block",left:0,right:width,top:0,bottom:height,position:0})
+           tempStyle = {
+            ...tempStyle,
+            top:"0px",
+            left:"0px",
+            width:width + "px",
+            height:height + "px",
+           }
+           setRectStyle(tempStyle);
+        }else{
+          const findTarget = (view:ParentPosition,point:{x:number,y:number}, config:TreeConfig)=>{
+            if(config.checkedMoveIn(view,point)){
+              const realPosition = config.getCurrentPosition(view);
+              if(config.child){
+                const leftTop = {x:realPosition.left,y:realPosition.top};
+                const rightTop = {x:realPosition.left + realPosition.width,y:realPosition.top};
+                const rightBottom = {x:realPosition.left + realPosition.width,y:realPosition.top + realPosition.height};
+                const leftBottom = {x:realPosition.left,y:realPosition.top + realPosition.height};
+                const middle = {x:realPosition.left + realPosition.width/2,y:realPosition.top + realPosition.height/2};
 
-          setConfig({ row: currentY, column: currentX });
-         
-        }
-        let pass = true;
-        console.log(temp);
-        for(let key of Object.keys(temp)){
-          if(rectStyle[key] !== temp[key]){
-            pass = false;
-            break;
+                if(checkPointInArea(point,[leftTop,middle,leftBottom])){
+                  setRectStyle({
+                    ...rectStyle,
+                    top:realPosition.top + "px",
+                    left:realPosition.left + "px",
+                    width:realPosition.width/2 + "px",
+                    height:realPosition.height + "px",
+                   })
+                   setConfig({target:config.key,left:0,top:0,right:realPosition.width/2,bottom:realPosition.height,layout:"row",position:0})
+                }else if(checkPointInArea(point,[leftTop,rightTop,middle])){
+                  setRectStyle({
+                    ...rectStyle,
+                    top:realPosition.top + "px",
+                    left:realPosition.left + "px",
+                    width:realPosition.width + "px",
+                    height:realPosition.height/2 + "px",
+                   })
+                   setConfig({target:config.key,left:0,top:0,right:realPosition.width,bottom:realPosition.height/2,layout:"column",position:0})
+                }else if(checkPointInArea(point,[rightTop,rightBottom,middle])){
+                  setRectStyle({
+                    ...rectStyle,
+                    top:realPosition.top + "px",
+                    left:realPosition.left + realPosition.width/2 + "px",
+                    width:realPosition.width/2 + "px",
+                    height:realPosition.height + "px",
+                   })
+                   setConfig({target:config.key,left:realPosition.width/2,top:0,right:realPosition.width,bottom:realPosition.height,layout:"row",position:1})
+                }else if(checkPointInArea(point,[rightBottom,middle,leftBottom])){
+                  setRectStyle({
+                    ...rectStyle,
+                    top:realPosition.top + realPosition.height/2 + "px",
+                    left:realPosition.left + "px",
+                    width:realPosition.width + "px",
+                    height:realPosition.height/2 + "px",
+                   })
+                   setConfig({target:config.key,left:0,top:realPosition.height/2,right:realPosition.width,bottom:realPosition.height,layout:"column",position:1})
+                }
+              }else{
+                 for(const item of config.children!){
+                  findTarget(realPosition,point,item);
+                 }
+              }
+            }
+           }
+        
+          for(const config of items){
+           findTarget({left:0,top:0,width:width,height:height},{x,y},config);
           }
-        }
-        console.log("pass",pass)
-        if(!pass){
-          setRectStyle(temp);
         }
         setAnchorVisible(true);
       }
@@ -448,20 +164,112 @@ export default function Workspace({
     [container, rectStyle, items, height, width]
   );
 
+ 
   const handleDragLeave = useCallback((ev:React.DragEvent) => {
     setAnchorVisible(false);
     ev.dataTransfer.clearData();
   }, []);
 
-  const calculateWidth = () => {
-    if (container.current) {
-      return container.current.getBoundingClientRect().width;
+
+  const generateTree =( tree: Array<TreeConfig>)=>{
+    const components:Array<React.ReactElement> = [];    
+    tree.forEach((config,index)=>{
+      components.push(gengerateTreeChildren(config,config.getCurrentPosition({width:width,height:height,left:0,top:0}),index === 0,index === tree.length-1,"column"))
+     })
+      return components;
+  }
+
+  const updateSize = (config:TreeConfig,view:ParentPosition,scaleHeight:number,scaleWidth:number)=>{
+    console.log("scaleHeight",scaleHeight,"scaleWidth",scaleWidth)
+    const parent = config.parent;
+    if(!parent || !parent.children){
+      return;
     }
-    return 0;
-  };
+    
+    const index = parent.children!.findIndex((item)=>item.key === config.key);
+    if(index === 0){
+      parent.children[0].bottom = parent.children[0].bottom + scaleHeight / view.height;
+      parent.children[0].right = parent.children[0].right + scaleWidth / view.width;
+      parent.children[1].top = parent.children[1].top + scaleHeight / view.height;
+      parent.children[1].left = parent.children[1].left + scaleWidth / view.width;
+    }else{
+      parent.children[0].bottom = parent.children[0].bottom +scaleHeight / view.height;
+      parent.children[0].right = parent.children[0].right + scaleWidth / view.width;
+      parent.children[1].top = parent.children[1].top +scaleHeight / view.height;
+      parent.children[1].left = parent.children[1].left + scaleWidth / view.width;
+    }
+    setItems([...items]);
+  }
 
-
-  const findTarget = (positionX:number,positionY:number,items:Array<>)=>{}
+  const gengerateTreeChildren = (config:TreeConfig,view:ParentPosition,isFirst:boolean,isLast:boolean,parentLayout:"row" | "column" | "block")=>{
+    let mode:"horizontal" | "vertical" | "left" | "top" | "bottom" | "right" | "none" = "none";
+    if(isFirst && isLast){
+        mode = "none";
+    }else if(isFirst){
+      switch(parentLayout){
+        case "row":mode = "right";break;
+        case "column":mode = "bottom";break;
+      }
+    }else if(isLast){
+      switch(parentLayout){
+        case "row":mode = "left";break;
+        case "column":mode = "top";break;
+      }
+    }else{
+      switch(parentLayout){
+        case "row":mode = "horizontal";break;
+        case "column":mode = "vertical";break;
+      }
+    }
+    switch(config.layout){
+     case "block":{
+       return <ResizeBox
+        key={config.key}
+        resizeMode={mode}
+        maxHeight={config.getMaxHeight(view.height)}
+        minHeight={config.getMinHeight(view.height)}
+        height={config.getHeight(view.height)}
+        width={config.getWidth(view.width)}
+        minWidth={config.getMinWidth(view.width)}
+        maxWidth={config.getMaxWidth(view.width)}
+        onResize={({scaleHeight,scaleWidth})=>{
+          updateSize(config,view,scaleHeight,scaleWidth);
+        }}
+        >{config.child!.component}</ResizeBox>
+     }
+     case "column":{
+      const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
+      return <ResizeBox key={config.key} resizeMode={mode}
+      maxHeight={config.getMaxHeight(view.height)}
+      minHeight={config.getMinHeight(view.height)}
+      height={config.getHeight(view.height)}
+      width={config.getWidth(view.width)}
+      minWidth={config.getMinWidth(view.width)}
+      maxWidth={config.getMaxWidth(view.width)}
+      display="column"
+      onResize={({scaleHeight,scaleWidth})=>{
+        updateSize(config,view,scaleHeight,scaleWidth);
+      }}
+      >{...children}</ResizeBox>
+     }
+     case 'row':{
+      const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
+      return <ResizeBox key={config.key} resizeMode={mode}
+      maxHeight={config.getMaxHeight(view.height)}
+      minHeight={config.getMinHeight(view.height)}
+      height={config.getHeight(view.height)}
+      width={config.getWidth(view.width)}
+      minWidth={config.getMinWidth(view.width)}
+      maxWidth={config.getMaxWidth(view.width)}
+      display="row"
+      onResize={({scaleHeight,scaleWidth})=>{
+        updateSize(config,view,scaleHeight,scaleWidth);
+      }}
+      >{...children}</ResizeBox>
+     }
+    }
+    return <div></div>
+  }
 
   return (
     <div
@@ -472,53 +280,7 @@ export default function Workspace({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      {items.map((e, row) => {
-        return (
-          <ResizeBox
-            key={row}
-            minHeight={e.minHeight}
-            maxHeight={e.maxHeight}
-            minWidth={calculateWidth()}
-            maxWidth={calculateWidth()}
-            width={calculateWidth()}
-            height={e.height}
-            resizeMode="vertical"
-            onResize={({ height }) => {
-              const temp = [...items];
-              temp[row].height = height;
-              temp[row].children.forEach((ele) => {
-                ele.height = height;
-              });
-              setItems(temp);
-            }}
-            marginBottom={row !== items.length - 1 ? 10 : undefined}
-          >
-            <div className="row" style={{ backgroundColor: "gray" }}>
-              {e.children.map((ele, column) => (
-                <ResizeBox
-                  key={`${row}-${column}`}
-                  minHeight={ele.minHeight}
-                  maxHeight={ele.maxHeight}
-                  minWidth={ele.minWidth}
-                  maxWidth={ele.maxWidth}
-                  height={ele.height}
-                  width={ele.width}
-                  resizeMode="horizontal"
-                  onResize={({ width, height }) => {
-                    const temp = [...items];
-                    temp[row].children[column].height = height;
-                    temp[row].children[column].width = width;
-                    setItems(temp);
-                  }}
-                  marginLeft={column !== 0 ? 10 : undefined}
-                >
-                  {ele.child}
-                </ResizeBox>
-              ))}
-            </div>
-          </ResizeBox>
-        );
-      })}
+      {generateTree(items)}
       {anchorVisible && (
         <div style={rectStyle} draggable={false} className="anchor"></div>
       )}
