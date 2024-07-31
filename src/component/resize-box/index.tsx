@@ -56,26 +56,16 @@ export default function ResizeBox({
           onResize({
             width: tempWidth,
             height: height,
-            scaleWidth: tempWidth > maxWidth ? 0 : tempWidth < minWidth ? 0 : event.movementX,
+            scaleWidth: tempWidth < maxWidth && tempWidth > minWidth ? event.movementX : 0,
             scaleHeight: 0,
           });
         } else if (cursorType === "row-resize") {
           let tempHeight = height + event.movementY;
-          tempHeight =
-            tempHeight > maxHeight
-              ? maxHeight
-              : tempHeight < minHeight
-                ? minHeight
-                : tempHeight;
           onResize({
             width: width,
             height: tempHeight,
             scaleWidth: 0,
-            scaleHeight: tempHeight > maxHeight
-              ? 0
-              : tempHeight < minHeight
-                ? 0
-                : event.movementY,
+            scaleHeight: tempHeight < maxHeight && tempHeight > minHeight ? event.movementY: 0,
           });
         }
       } else if (refContainer.current && !allowResize) {

@@ -3,7 +3,7 @@ import "./index.css";
 import ResizeBox from "../resize-box";
 import { useResize } from "../../hooks";
 import {TreeConfig,ComponentConfig, generateTreeConfig, ParentPosition} from "./type";
-import { checkPointInArea } from "./util";
+import { checkPointInArea, Point } from "./util";
 
 type GenerateComponent = () => React.ReactElement;
 
@@ -13,13 +13,12 @@ export default function Workspace({
   name: string;
   panels: { [key: string]: GenerateComponent };
 }) {
-  const [anchorVisible, setAnchorVisible] = useState<boolean>(false);
   const [items, setItems] = useState<Array<TreeConfig>>([]);
   const container = useRef<HTMLDivElement | null>(null);
-  const [rectStyle, setRectStyle] = useState<{[key:string]:string}>({position: "absolute",});
+  const [rectStyle, setRectStyle] = useState<{[key:string]:string}>({position: "absolute"});
   const [config, setConfig] = useState<ComponentConfig | null>(null);
   const { width, height } = useResize(container);
-
+  const [lastPosition,setLastPosition] = useState<Array<Point> | null>(null);
   useEffect(()=>{
     window.ondrop = (e)=>{
       e.preventDefault();
@@ -40,7 +39,8 @@ export default function Workspace({
   const handleOnDrap = useCallback(
     (ev: React.DragEvent) => {
       ev.preventDefault();
-      setAnchorVisible(false);
+      setLastPosition(null);
+      setRectStyle({...rectStyle,opacity:"0"});
       const targetPanel = ev.dataTransfer.getData("text");
       if(targetPanel === ""){
         return;
@@ -81,13 +81,18 @@ export default function Workspace({
   const handleDragOver = useCallback(
     (ev: React.DragEvent) => {
       ev.preventDefault();
-      let tempStyle = {...rectStyle};
+      let tempStyle:{[key:string]:string} = {...rectStyle,opacity:"1"};
       let tempItems = [...items];
       if (container.current && ev.dataTransfer.effectAllowed === "copy") {
         const rect = container.current.getBoundingClientRect();
         const { left, top} = rect;
         const x = ev.clientX -left;
         const y = ev.clientY - top;
+        if(lastPosition && lastPosition.length >= 3){
+          if(checkPointInArea({x,y},lastPosition)){
+            return;
+          }
+        }
         if(tempItems.length === 0){
            setConfig({target:"root",layout:"block",left:0,right:width,top:0,bottom:height,position:0})
            tempStyle = {
@@ -100,51 +105,54 @@ export default function Workspace({
            setRectStyle(tempStyle);
         }else{
           const findTarget = (view:ParentPosition,point:{x:number,y:number}, config:TreeConfig)=>{
-            if(config.checkedMoveIn(view,point)){
-              const realPosition = config.getCurrentPosition(view);
+            const realPosition = config.getCurrentPosition(view);
+            const leftTop = {x:realPosition.left,y:realPosition.top};
+            const rightTop = {x:realPosition.left + realPosition.width,y:realPosition.top};
+            const rightBottom = {x:realPosition.left + realPosition.width,y:realPosition.top + realPosition.height};
+            const leftBottom = {x:realPosition.left,y:realPosition.top + realPosition.height};
+            const middle = {x:realPosition.left + realPosition.width/2,y:realPosition.top + realPosition.height/2};
+            if(checkPointInArea(point,[leftTop,rightTop,rightBottom,leftBottom])){
               if(config.child){
-                const leftTop = {x:realPosition.left,y:realPosition.top};
-                const rightTop = {x:realPosition.left + realPosition.width,y:realPosition.top};
-                const rightBottom = {x:realPosition.left + realPosition.width,y:realPosition.top + realPosition.height};
-                const leftBottom = {x:realPosition.left,y:realPosition.top + realPosition.height};
-                const middle = {x:realPosition.left + realPosition.width/2,y:realPosition.top + realPosition.height/2};
-
                 if(checkPointInArea(point,[leftTop,middle,leftBottom])){
                   setRectStyle({
-                    ...rectStyle,
+                    ...tempStyle,
                     top:realPosition.top + "px",
                     left:realPosition.left + "px",
                     width:realPosition.width/2 + "px",
                     height:realPosition.height + "px",
                    })
                    setConfig({target:config.key,left:0,top:0,right:realPosition.width/2,bottom:realPosition.height,layout:"row",position:0})
+                   setLastPosition([leftTop,middle,leftBottom])
                 }else if(checkPointInArea(point,[leftTop,rightTop,middle])){
                   setRectStyle({
-                    ...rectStyle,
+                    ...tempStyle,
                     top:realPosition.top + "px",
                     left:realPosition.left + "px",
                     width:realPosition.width + "px",
                     height:realPosition.height/2 + "px",
                    })
                    setConfig({target:config.key,left:0,top:0,right:realPosition.width,bottom:realPosition.height/2,layout:"column",position:0})
+                   setLastPosition([leftTop,rightTop,middle])
                 }else if(checkPointInArea(point,[rightTop,rightBottom,middle])){
                   setRectStyle({
-                    ...rectStyle,
+                    ...tempStyle,
                     top:realPosition.top + "px",
                     left:realPosition.left + realPosition.width/2 + "px",
                     width:realPosition.width/2 + "px",
                     height:realPosition.height + "px",
                    })
                    setConfig({target:config.key,left:realPosition.width/2,top:0,right:realPosition.width,bottom:realPosition.height,layout:"row",position:1})
+                   setLastPosition([rightTop,rightBottom,middle])
                 }else if(checkPointInArea(point,[rightBottom,middle,leftBottom])){
                   setRectStyle({
-                    ...rectStyle,
+                    ...tempStyle,
                     top:realPosition.top + realPosition.height/2 + "px",
                     left:realPosition.left + "px",
                     width:realPosition.width + "px",
                     height:realPosition.height/2 + "px",
                    })
                    setConfig({target:config.key,left:0,top:realPosition.height/2,right:realPosition.width,bottom:realPosition.height,layout:"column",position:1})
+                   setLastPosition([rightBottom,middle,leftBottom])
                 }
               }else{
                  for(const item of config.children!){
@@ -153,22 +161,22 @@ export default function Workspace({
               }
             }
            }
-        
+           setLastPosition(null);
           for(const config of items){
            findTarget({left:0,top:0,width:width,height:height},{x,y},config);
           }
         }
-        setAnchorVisible(true);
       }
     },
-    [container, rectStyle, items, height, width]
+    [container, rectStyle, items, height, width,lastPosition]
   );
 
  
   const handleDragLeave = useCallback((ev:React.DragEvent) => {
-    setAnchorVisible(false);
+    setLastPosition(null);
+    setRectStyle({...rectStyle,opacity:"0"});
     ev.dataTransfer.clearData();
-  }, []);
+  }, [rectStyle]);
 
 
   const generateTree =( tree: Array<TreeConfig>)=>{
@@ -250,7 +258,7 @@ export default function Workspace({
       onResize={({scaleHeight,scaleWidth})=>{
         updateSize(config,view,scaleHeight,scaleWidth);
       }}
-      >{...children}</ResizeBox>
+      ><>{children}</></ResizeBox>
      }
      case 'row':{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
@@ -265,7 +273,7 @@ export default function Workspace({
       onResize={({scaleHeight,scaleWidth})=>{
         updateSize(config,view,scaleHeight,scaleWidth);
       }}
-      >{...children}</ResizeBox>
+      ><>{children}</></ResizeBox>
      }
     }
     return <div></div>
@@ -281,9 +289,7 @@ export default function Workspace({
       onDragLeave={handleDragLeave}
     >
       {generateTree(items)}
-      {anchorVisible && (
-        <div style={rectStyle} draggable={false} className="anchor"></div>
-      )}
+       <div style={rectStyle} draggable={false} className="anchor"></div>
     </div>
   );
 }
