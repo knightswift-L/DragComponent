@@ -2,7 +2,7 @@ import React, { useCallback, useState, useRef, useEffect } from "react";
 import "./index.css";
 import ResizeBox from "../resize-box";
 import { useResize } from "../../hooks";
-import {TreeConfig,ComponentConfig, generateTreeConfig, ParentPosition} from "./type";
+import {TreeConfig,ComponentConfig, generateTreeConfig, ParentPosition, Padding} from "./type";
 import { checkPointInArea, Point } from "./util";
 
 type GenerateComponent = () => React.ReactElement;
@@ -126,7 +126,7 @@ export default function Workspace({
                    setConfig({target:config.key,
                     left:0,
                     top:0,
-                    right:(realPosition.innerWidth!)/2,
+                    right:(realPosition.innerWidth! - Padding)/2 + Padding,
                     bottom:realPosition.innerHeight,
                     layout:"row",position:0})
                    setLastPosition([leftTop,middle,leftBottom])
@@ -137,14 +137,17 @@ export default function Workspace({
                     top:realPosition.top + realPosition.paddingTop + "px",
                     left:realPosition.left +realPosition.paddingLeft + "px",
                     width:realPosition.innerWidth! + "px",
-                    height:(realPosition.innerHeight!)/2 + "px",
+                    height:(realPosition.innerHeight! - Padding)/2 + Padding + "px",
                    })
-                   setConfig({target:config.key,
+                   console.log(realPosition.innerWidth);
+                   setConfig({
+                    target:config.key,
                     left:0,
                     top:0,
                     right:realPosition.innerWidth,
-                    bottom:(realPosition.innerHeight!)/2,
-                    layout:"column",position:0})
+                    bottom:(realPosition.innerHeight! - Padding)/2 + Padding,
+                    layout:"column",
+                    position:0})
                    setLastPosition([leftTop,rightTop,middle])
                 }else if(checkPointInArea(point,[rightTop,rightBottom,middle])){
                   //Right
@@ -156,7 +159,7 @@ export default function Workspace({
                     height:realPosition.innerHeight! + "px",
                    })
                    setConfig({target:config.key,
-                    left:(realPosition.innerWidth!)/2,
+                    left:realPosition.innerWidth - (realPosition.innerWidth! - Padding)/2,
                     top:0,
                     right:realPosition.innerWidth,
                     bottom:realPosition.innerHeight,layout:"row",position:1})
@@ -172,7 +175,7 @@ export default function Workspace({
                    })
                    setConfig({target:config.key,
                     left:0,
-                    top:realPosition.innerHeight!/2,
+                    top:realPosition.innerHeight - (realPosition.innerHeight! - Padding)/2,
                     right:realPosition.innerWidth,
                     bottom:realPosition.innerHeight,
                     layout:"column",position:1})
@@ -261,12 +264,12 @@ export default function Workspace({
      case "column":{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
       return <ResizeBox key={config.key} resizeMode={mode}
-      maxHeight={config.getMaxHeight(view.height)}
-      minHeight={config.getMinHeight(view.height)}
-      height={config.getHeight(view.height)}
-      width={config.getWidth(view.width)}
-      minWidth={config.getMinWidth(view.width)}
-      maxWidth={config.getMaxWidth(view.width)}
+      maxHeight={config.getMaxHeight(view.innerHeight)}
+      minHeight={config.getMinHeight(view.innerHeight)}
+      height={config.getHeight(view.innerHeight)}
+      width={config.getWidth(view.innerWidth)}
+      minWidth={config.getMinWidth(view.innerWidth)}
+      maxWidth={config.getMaxWidth(view.innerWidth)}
       display="column"
       onResize={({scaleHeight,scaleWidth})=>{
         updateSize(config,view,scaleHeight,scaleWidth);
@@ -276,12 +279,12 @@ export default function Workspace({
      case 'row':{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
       return <ResizeBox key={config.key} resizeMode={mode}
-      maxHeight={config.getMaxHeight(view.height)}
-      minHeight={config.getMinHeight(view.height)}
-      height={config.getHeight(view.height)}
-      width={config.getWidth(view.width)}
-      minWidth={config.getMinWidth(view.width)}
-      maxWidth={config.getMaxWidth(view.width)}
+      maxHeight={config.getMaxHeight(view.innerHeight)}
+      minHeight={config.getMinHeight(view.innerHeight)}
+      height={config.getHeight(view.innerHeight)}
+      width={config.getWidth(view.innerWidth)}
+      minWidth={config.getMinWidth(view.innerWidth)}
+      maxWidth={config.getMaxWidth(view.innerWidth)}
       display="row"
       onResize={({scaleHeight,scaleWidth})=>{
         updateSize(config,view,scaleHeight,scaleWidth);

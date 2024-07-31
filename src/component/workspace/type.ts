@@ -25,7 +25,7 @@ export class TreeConfig {
     right: number;
     top: number;
     bottom: number;
-    minWidth: number;
+    minWidth: number
     maxWidth: number;
     maxHeight: number;
     minHeight: number;
@@ -184,14 +184,14 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                         }
                     }
                 });
-                parent.children.push(newComponent)
+                parent.children.push(newComponent);
                 parent.children.push(new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
                     top: config.top / view.innerHeight,
                     bottom: config.bottom / view.innerHeight,
                     left: config.right / view.innerWidth,
-                    right: config.right / view.innerWidth + (config.right - config.left) / view.innerWidth,
+                    right: 1,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1,
                     minWidth: 100 / view.innerWidth,
@@ -205,9 +205,9 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 parent.children.push(new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.top / view.innerHeight,
-                    bottom: config.bottom / view.innerHeight,
-                    left: config.left / view.innerWidth - (config.right - config.left) / view.innerWidth,
+                    top: 0,
+                    bottom: 1,
+                    left: 0,
                     right: config.left / view.innerWidth,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1,
@@ -221,10 +221,10 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 newComponent = new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.top / view.innerHeight,
-                    bottom: config.bottom / view.innerHeight,
+                    top: 0,
+                    bottom: 1,
                     left: config.left / view.innerWidth,
-                    right: config.right / view.innerWidth,
+                    right: 1,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1,
                     minWidth: 100 / view.innerWidth,
@@ -249,10 +249,10 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 newComponent = new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.top / view.innerHeight,
+                    top: 0,
                     bottom: config.bottom / view.innerHeight,
-                    left: config.left / view.innerWidth,
-                    right: config.right / view.innerWidth,
+                    left: 0,
+                    right: 1,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1 - 100 / view.innerHeight,
                     minWidth: 100 / view.innerWidth,
@@ -271,8 +271,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: config.bottom / view.innerHeight,
                     bottom: 1,
-                    left: config.left / view.innerWidth,
-                    right: config.right / view.innerWidth,
+                    left: 0,
+                    right: 1,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1 - 100 / view.innerHeight,
                     minWidth: 100 / view.innerWidth,
@@ -288,8 +288,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: 0,
                     bottom: config.top / view.innerHeight,
-                    left: config.left / view.innerWidth,
-                    right: config.right / view.innerWidth,
+                    left: 0,
+                    right: 1,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1 - 100 / view.innerHeight,
                     minWidth: 100 / view.innerWidth,
@@ -304,8 +304,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: config.top / view.innerHeight,
                     bottom: config.bottom / view.innerHeight,
-                    left: config.left / view.innerWidth,
-                    right: config.right / view.innerWidth,
+                    left: 0,
+                    right: 1,
                     minHeight: 100 / view.innerHeight,
                     maxHeight: 1 - 100 / view.innerHeight,
                     minWidth: 100 / view.innerWidth,
