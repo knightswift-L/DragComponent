@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react";
+import { checkPointInArea } from "./util";
 
-export const Padding = 10;
+const Padding = 5;
 
 class LayoutConfig {
     isLocked: boolean;
@@ -324,8 +325,10 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
         if (parent.children) {
             if (parent.layout === 'row') {
                 parent.children[0].paddingRight = Padding;
+                parent.children[1].paddingLeft = Padding;
             } else if (parent.layout === "column") {
                 parent.children[0].paddingBottom = Padding;
+                parent.children[1].paddingTop = Padding;
             }
         }
         return newComponent
