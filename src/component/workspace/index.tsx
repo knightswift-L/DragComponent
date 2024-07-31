@@ -235,6 +235,26 @@ export default function Workspace({
     setItems([...items]);
   }
 
+
+  const getMaxWidth = (target:TreeConfig,view:ParentPosition)=>{
+    if(!target.parent){
+      return view.innerWidth;
+    }
+
+    return view.innerWidth - target.parent.children!.filter((item)=>item.key != target.key)[0].getMinWidth();
+  }
+
+  const getMaxHeight = (target:TreeConfig,view:ParentPosition)=>{
+    if(!target.parent){
+      return view.innerHeight;
+    }
+
+    return view.innerHeight - target.parent.children!.filter((item)=>item.key != target.key)[0].getMinHeight();
+  }
+
+  
+
+
   const gengerateTreeChildren = (config:TreeConfig,view:ParentPosition,isFirst:boolean,isLast:boolean,parentLayout:"row" | "column" | "block")=>{
     let mode: "bottom" | "right" | "none" = "none";
     if(isFirst && isLast){
@@ -250,26 +270,39 @@ export default function Workspace({
        return <ResizeBox
         key={config.key}
         resizeMode={mode}
-        maxHeight={config.getMaxHeight(view.innerHeight)}
-        minHeight={config.getMinHeight(view.innerHeight)}
+        maxHeight={getMaxHeight(config,view)}
+        minHeight={config.getMinHeight()}
         height={config.getHeight(view.innerHeight)}
         width={config.getWidth(view.innerWidth)}
-        minWidth={config.getMinWidth(view.innerWidth)}
-        maxWidth={config.getMaxWidth(view.innerWidth)}
+        minWidth={config.getMinWidth()}
+        maxWidth={getMaxWidth(config,view)}
         onResize={({scaleHeight,scaleWidth})=>{
           updateSize(config,view,scaleHeight,scaleWidth);
         }}
-        >{config.child!.component}</ResizeBox>
+        ><>
+        <div style={{width:"100%",height:"100px",backgroundColor:"black"}}>
+          <button onClick={()=>{
+            if(!config.parent){
+              setItems([]);
+            }else{
+             config.delete();
+             console.log(items[0])
+             setItems([...items]);
+            }
+          }}>delete</button>
+        </div>
+        {config.child!.component}
+        </></ResizeBox>
      }
      case "column":{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
       return <ResizeBox key={config.key} resizeMode={mode}
-      maxHeight={config.getMaxHeight(view.innerHeight)}
-      minHeight={config.getMinHeight(view.innerHeight)}
+      maxHeight={getMaxHeight(config, view)}
+      minHeight={config.getMinHeight()}
       height={config.getHeight(view.innerHeight)}
       width={config.getWidth(view.innerWidth)}
-      minWidth={config.getMinWidth(view.innerWidth)}
-      maxWidth={config.getMaxWidth(view.innerWidth)}
+      minWidth={config.getMinWidth()}
+      maxWidth={getMaxWidth(config,view)}
       display="column"
       onResize={({scaleHeight,scaleWidth})=>{
         updateSize(config,view,scaleHeight,scaleWidth);
@@ -279,12 +312,12 @@ export default function Workspace({
      case 'row':{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
       return <ResizeBox key={config.key} resizeMode={mode}
-      maxHeight={config.getMaxHeight(view.innerHeight)}
-      minHeight={config.getMinHeight(view.innerHeight)}
+      maxHeight={getMaxHeight(config,view)}
+      minHeight={config.getMinHeight()}
       height={config.getHeight(view.innerHeight)}
       width={config.getWidth(view.innerWidth)}
-      minWidth={config.getMinWidth(view.innerWidth)}
-      maxWidth={config.getMaxWidth(view.innerWidth)}
+      minWidth={config.getMinWidth()}
+      maxWidth={getMaxWidth(config,view)}
       display="row"
       onResize={({scaleHeight,scaleWidth})=>{
         updateSize(config,view,scaleHeight,scaleWidth);
@@ -292,7 +325,6 @@ export default function Workspace({
       ><>{children}</></ResizeBox>
      }
     }
-    return <div></div>
   }
 
   return (

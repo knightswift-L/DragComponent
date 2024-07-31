@@ -35,8 +35,8 @@ export default function ResizeBox({
   const [cursorType, setCursorType] = useState<
     "col-resize" | "row-resize" | "auto"
   >("auto");
-  const [width, setWidth] = useState<number>(originalWidth);
-  const [height, setHeight] = useState<number>(originalHeight);
+  const [width, setWidth] = useState<number>(originalWidth >minWidth ? originalWidth :minWidth);
+  const [height, setHeight] = useState<number>(originalHeight > minHeight ? originalHeight :minHeight);
   const [allowResize, setAllowResize] = useState<boolean>(false);
   const [resizeStart, setResizeStart] = useState<"start" | "end" | "none">(
     "none"
@@ -51,21 +51,19 @@ export default function ResizeBox({
       if (refContainer.current && allowResize) {
         if (cursorType === "col-resize") {
           let tempWidth = width + event.movementX;
-          console.log("tempWidth",tempWidth,"minWidth",minWidth,"maxWidth",maxWidth)
           onResize({
             width: tempWidth > maxWidth  ? maxWidth : (tempWidth < minWidth ? minWidth : tempWidth),
             height: height,
-            scaleWidth: tempWidth < maxWidth && tempWidth > minWidth ? event.movementX : 0,
+            scaleWidth: (tempWidth > maxWidth && tempWidth < width) || (tempWidth < minWidth && tempWidth > width) || (tempWidth < maxWidth && tempWidth > minWidth) ? event.movementX : 0,
             scaleHeight: 0,
           });
         } else if (cursorType === "row-resize") {
           let tempHeight = height + event.movementY;
-          console.log("tempHeight",tempHeight,"minHeight",minHeight,"maxHeight",maxHeight)
           onResize({
             width: width,
             height: tempHeight > maxHeight ? maxHeight : (tempHeight < minHeight ? minHeight : tempHeight),
             scaleWidth: 0,
-            scaleHeight: tempHeight < maxHeight && tempHeight > minHeight ? event.movementY: 0,
+            scaleHeight: (tempHeight > maxHeight && tempHeight < height) || (tempHeight < minHeight && tempHeight > height) || (tempHeight > minHeight && tempHeight < maxHeight) ? event.movementY : 0
           });
         }
       } else if (refContainer.current && !allowResize) {
@@ -152,7 +150,7 @@ export default function ResizeBox({
         padding: getPadding(),
         boxSizing: "border-box",
         display: 'flex',
-        flexDirection: display,
+        flexDirection: display ?? "column",
         flexShrink: "0",
         overflow: "clip"
       }}
