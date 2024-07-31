@@ -48,22 +48,22 @@ export default function ResizeBox({
 
   const handleMove = useCallback(
     (event: React.MouseEvent) => {
-      event.stopPropagation();
       if (refContainer.current && allowResize) {
         if (cursorType === "col-resize") {
           let tempWidth = width + event.movementX;
-          tempWidth = (tempWidth > maxWidth ? maxWidth : (tempWidth < minWidth ? minWidth : tempWidth));
+          console.log("tempWidth",tempWidth,"minWidth",minWidth,"maxWidth",maxWidth)
           onResize({
-            width: tempWidth,
+            width: tempWidth > maxWidth  ? maxWidth : (tempWidth < minWidth ? minWidth : tempWidth),
             height: height,
             scaleWidth: tempWidth < maxWidth && tempWidth > minWidth ? event.movementX : 0,
             scaleHeight: 0,
           });
         } else if (cursorType === "row-resize") {
           let tempHeight = height + event.movementY;
+          console.log("tempHeight",tempHeight,"minHeight",minHeight,"maxHeight",maxHeight)
           onResize({
             width: width,
-            height: tempHeight,
+            height: tempHeight > maxHeight ? maxHeight : (tempHeight < minHeight ? minHeight : tempHeight),
             scaleWidth: 0,
             scaleHeight: tempHeight < maxHeight && tempHeight > minHeight ? event.movementY: 0,
           });
@@ -133,7 +133,6 @@ export default function ResizeBox({
 
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
     if (refContainer.current) {
       const { left, right, top, bottom } =
         refContainer.current.getBoundingClientRect();

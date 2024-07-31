@@ -5,8 +5,8 @@ import "./index.css";
 export default function HomePage() {
     const panels = {
         "div":()=><div style={{width:"100%",height:"100%",backgroundColor:"blue"}}><p>test</p></div>,
-        "divr":()=><div style={{width:"100%",height:"100%",backgroundColor:"gray"}}></div>,
-        "divo":()=><div style={{width:"100%",height:"100%",backgroundColor:"black"}}></div>
+        "divr":()=><div style={{width:"100%",height:"100%",backgroundColor:"red"}}></div>,
+        "divo":()=><div style={{width:"100%",height:"100%",backgroundColor:"orange"}}></div>
     }
   return (
     <div className="pageContainer">

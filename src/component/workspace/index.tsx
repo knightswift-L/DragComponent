@@ -63,10 +63,10 @@ export default function Workspace({
       }
       
       if(config && config.target === "root"){
-        let tree =  generateTreeConfig(null,{width:width,height:height,left:0,top:0,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0},config,panels[targetPanel](),targetPanel);
+        let tree =  generateTreeConfig(null,{width:width,height:height,left:0,top:0,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0,innerHeight:height,innerWidth:width},config,panels[targetPanel](),targetPanel);
         setItems([tree]);
       }else if(config){
-        const result = findTarget(items[0],{width:width,height:height,left:0,top:0,paddingBottom:0,paddingTop:0,paddingLeft:0,paddingRight:0},config.target)
+        const result = findTarget(items[0],{width:width,height:height,left:0,top:0,paddingBottom:0,paddingTop:0,paddingLeft:0,paddingRight:0,innerHeight:height,innerWidth:width},config.target)
         if(result){
           generateTreeConfig(result.target,result.view,config,panels[targetPanel](),targetPanel);
           setItems([...items])
@@ -119,16 +119,15 @@ export default function Workspace({
                     ...tempStyle,
                     top:realPosition.top +realPosition.paddingTop + "px",
                     left:realPosition.left + realPosition.paddingLeft + "px",
-                    width:(realPosition.width - realPosition.paddingLeft - realPosition.paddingRight)/2 + "px",
-                    height:realPosition.height - realPosition.paddingTop - realPosition.paddingBottom + "px",
+                    width:(realPosition.innerWidth!)/2 + "px",
+                    height:realPosition.innerHeight! + "px",
                    }
-                   console.log("key",config.key,style)
                   setRectStyle(style)
                    setConfig({target:config.key,
-                    left:realPosition.paddingLeft,
-                    top:realPosition.paddingTop,
-                    right:(realPosition.width - realPosition.paddingLeft - realPosition.paddingRight)/2 + realPosition.paddingLeft,
-                    bottom:realPosition.height- realPosition.paddingBottom,
+                    left:0,
+                    top:0,
+                    right:(realPosition.innerWidth!)/2,
+                    bottom:realPosition.innerHeight,
                     layout:"row",position:0})
                    setLastPosition([leftTop,middle,leftBottom])
                 }else if(checkPointInArea(point,[leftTop,rightTop,middle])){
@@ -137,14 +136,14 @@ export default function Workspace({
                     ...tempStyle,
                     top:realPosition.top + realPosition.paddingTop + "px",
                     left:realPosition.left +realPosition.paddingLeft + "px",
-                    width:realPosition.width - realPosition.paddingLeft - realPosition.paddingRight + "px",
-                    height:(realPosition.height - realPosition.paddingTop - realPosition.paddingBottom)/2 + "px",
+                    width:realPosition.innerWidth! + "px",
+                    height:(realPosition.innerHeight!)/2 + "px",
                    })
                    setConfig({target:config.key,
-                    left:0 +realPosition.paddingLeft,
-                    top:0 + realPosition.paddingTop,
-                    right:realPosition.width - realPosition.paddingRight,
-                    bottom:realPosition.paddingTop + (realPosition.height - realPosition.paddingTop - realPosition.paddingBottom)/2,
+                    left:0,
+                    top:0,
+                    right:realPosition.innerWidth,
+                    bottom:(realPosition.innerHeight!)/2,
                     layout:"column",position:0})
                    setLastPosition([leftTop,rightTop,middle])
                 }else if(checkPointInArea(point,[rightTop,rightBottom,middle])){
@@ -152,22 +151,31 @@ export default function Workspace({
                   setRectStyle({
                     ...tempStyle,
                     top:realPosition.top +realPosition.paddingTop + "px",
-                    left:realPosition.left + realPosition.paddingLeft + (realPosition.width - realPosition.paddingLeft - realPosition.paddingRight)/2 + "px",
-                    width:(realPosition.width - realPosition.paddingLeft - realPosition.paddingRight)/2 + "px",
-                    height:realPosition.height - realPosition.paddingTop - realPosition.paddingBottom + "px",
+                    left:realPosition.left + realPosition.paddingLeft + (realPosition.innerWidth!)/2 + "px",
+                    width:(realPosition.innerWidth!)/2 + "px",
+                    height:realPosition.innerHeight! + "px",
                    })
-                   setConfig({target:config.key,left:realPosition.paddingLeft + (realPosition.width - realPosition.paddingLeft - realPosition.paddingRight)/2,top:realPosition.paddingTop,right:realPosition.width - realPosition.paddingRight,bottom:realPosition.height - realPosition.paddingBottom,layout:"row",position:1})
+                   setConfig({target:config.key,
+                    left:(realPosition.innerWidth!)/2,
+                    top:0,
+                    right:realPosition.innerWidth,
+                    bottom:realPosition.innerHeight,layout:"row",position:1})
                    setLastPosition([rightTop,rightBottom,middle])
                 }else if(checkPointInArea(point,[rightBottom,middle,leftBottom])){
                   //Bottom
                   setRectStyle({
                     ...tempStyle,
-                    top:realPosition.top + realPosition.paddingTop + (realPosition.height - realPosition.paddingTop - realPosition.paddingBottom)/2 + "px",
+                    top:realPosition.top + realPosition.paddingTop + realPosition.innerHeight!/2 + "px",
                     left:realPosition.left + realPosition.paddingLeft + "px",
-                    width:realPosition.width - realPosition.paddingLeft - realPosition.paddingRight + "px",
-                    height:(realPosition.height - realPosition.paddingTop - realPosition.paddingBottom)/2 + "px",
+                    width:realPosition.innerWidth! + "px",
+                    height:(realPosition.innerHeight!)/2 + "px",
                    })
-                   setConfig({target:config.key,left:0 + realPosition.paddingLeft,top:realPosition.paddingTop + (realPosition.height - realPosition.paddingTop - realPosition.paddingBottom)/2,right:realPosition.width - realPosition.paddingRight,bottom:realPosition.height - realPosition.paddingBottom,layout:"column",position:1})
+                   setConfig({target:config.key,
+                    left:0,
+                    top:realPosition.innerHeight!/2,
+                    right:realPosition.innerWidth,
+                    bottom:realPosition.innerHeight,
+                    layout:"column",position:1})
                    setLastPosition([rightBottom,middle,leftBottom])
                 }
               }else{
@@ -179,7 +187,7 @@ export default function Workspace({
            }
            setLastPosition(null);
           for(const config of items){
-           findTarget({left:0,top:0,width:width,height:height,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0},{x,y},config);
+           findTarget({left:0,top:0,width:width,height:height,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0,innerHeight:height,innerWidth:width},{x,y},config);
           }
         }
       }
@@ -198,7 +206,7 @@ export default function Workspace({
   const generateTree =( tree: Array<TreeConfig>)=>{
     const components:Array<React.ReactElement> = [];    
     tree.forEach((config,index)=>{
-      components.push(gengerateTreeChildren(config,config.getCurrentPosition({width:width,height:height,left:0,top:0,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0}),index === 0,index === tree.length-1,"column"))
+      components.push(gengerateTreeChildren(config,config.getCurrentPosition({width:width,height:height,left:0,top:0,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0,innerHeight:height,innerWidth:width}),index === 0,index === tree.length-1,"column"))
      })
       return components;
   }
@@ -211,15 +219,15 @@ export default function Workspace({
     
     const index = parent.children!.findIndex((item)=>item.key === config.key);
     if(index === 0){
-      parent.children[0].bottom = parent.children[0].bottom + scaleHeight / view.height;
-      parent.children[0].right = parent.children[0].right + scaleWidth / view.width;
-      parent.children[1].top = parent.children[1].top + scaleHeight / view.height;
-      parent.children[1].left = parent.children[1].left + scaleWidth / view.width;
+      parent.children[0].bottom = parent.children[0].bottom + scaleHeight / view.innerHeight!;
+      parent.children[0].right = parent.children[0].right + scaleWidth / view.innerWidth!;
+      parent.children[1].top = parent.children[1].top + scaleHeight / view.innerHeight!;
+      parent.children[1].left = parent.children[1].left + scaleWidth / view.innerWidth!;
     }else{
-      parent.children[0].bottom = parent.children[0].bottom +scaleHeight / view.height;
-      parent.children[0].right = parent.children[0].right + scaleWidth / view.width;
-      parent.children[1].top = parent.children[1].top +scaleHeight / view.height;
-      parent.children[1].left = parent.children[1].left + scaleWidth / view.width;
+      parent.children[0].bottom = parent.children[0].bottom +scaleHeight / view.innerHeight!;
+      parent.children[0].right = parent.children[0].right + scaleWidth / view.innerWidth!;
+      parent.children[1].top = parent.children[1].top + scaleHeight / view.innerHeight!;
+      parent.children[1].left = parent.children[1].left + scaleWidth / view.innerWidth!;
     }
     setItems([...items]);
   }
@@ -249,12 +257,12 @@ export default function Workspace({
        return <ResizeBox
         key={config.key}
         resizeMode={mode}
-        maxHeight={config.getMaxHeight(view.height)}
-        minHeight={config.getMinHeight(view.height)}
-        height={config.getHeight(view.height)}
-        width={config.getWidth(view.width)}
-        minWidth={config.getMinWidth(view.width)}
-        maxWidth={config.getMaxWidth(view.width)}
+        maxHeight={config.getMaxHeight(view.innerHeight)}
+        minHeight={config.getMinHeight(view.innerHeight)}
+        height={config.getHeight(view.innerHeight)}
+        width={config.getWidth(view.innerWidth)}
+        minWidth={config.getMinWidth(view.innerWidth)}
+        maxWidth={config.getMaxWidth(view.innerWidth)}
         onResize={({scaleHeight,scaleWidth})=>{
           updateSize(config,view,scaleHeight,scaleWidth);
         }}
