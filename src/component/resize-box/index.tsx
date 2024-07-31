@@ -18,7 +18,7 @@ export default function ResizeBox({
   children,
   display
 }: {
-  resizeMode: "horizontal" | "vertical" | "left" | "top" | "bottom" | "right" | "none";
+  resizeMode: "bottom" | "right" | "none";
   minHeight: number;
   maxHeight: number;
   minWidth: number;
@@ -69,40 +69,12 @@ export default function ResizeBox({
           });
         }
       } else if (refContainer.current && !allowResize) {
-        const { left, right, top, bottom } =
+        const {right, bottom } =
           refContainer.current.getBoundingClientRect();
-        if (
-          resizeMode === "horizontal" &&
-          ((event.clientX - left < distance && event.clientX - left > 0) ||
-            (right - event.clientX < distance && right - event.clientX > 0))
-        ) {
-          setCursorType("col-resize");
-          if (event.clientX - left < distance && event.clientX - left > 0) {
-            setResizeStart("start");
-          } else {
-            setResizeStart("end");
-          }
-        } else if (
-          resizeMode === "vertical" &&
-          ((event.clientY - top < distance && event.clientY - top > 0) ||
-            (bottom - event.clientY < distance && bottom - event.clientY > 0))
-        ) {
-          setCursorType("row-resize");
-          if (event.clientY - top < distance && event.clientY - top > 0) {
-            setResizeStart("start");
-          } else {
-            setResizeStart("end");
-          }
-        } else if (resizeMode === "top" && (event.clientY - top < distance && event.clientY - top > 0)) {
-          setCursorType("row-resize");
-          setResizeStart("start");
-        } else if (resizeMode === "bottom" && (bottom - event.clientY < distance && bottom - event.clientY > 0)) {
+        if (resizeMode === "bottom" && (bottom - event.clientY < distance && bottom - event.clientY > 0)) {
           setCursorType("row-resize");
           setResizeStart("end");
-        } else if (resizeMode === "left" && (event.clientX - left < distance && event.clientX - left > 0)) {
-          setCursorType("col-resize");
-          setResizeStart("start")
-        } else if (resizeMode === "right" && (right - event.clientX < distance && right - event.clientX > 0)) {
+        }else if (resizeMode === "right" && (right - event.clientX < distance && right - event.clientX > 0)) {
           setCursorType("col-resize");
           setResizeStart("end")
         } else {
@@ -160,12 +132,8 @@ export default function ResizeBox({
 
   const getPadding = () => {
     switch (resizeMode) {
-      case "horizontal": return "0px 5px";
-      case "vertical": return "5px 0px";
-      case "left": return "0px 0px 0px 5px";
-      case "top": return "5px 0px 0px 0px";
-      case "bottom": return "0px 0px 5px 0px";
-      case "right": return "0px 5px 0px 0px";
+      case "bottom": return "0px 0px 10px 0px";
+      case "right": return "0px 10px 0px 0px";
       case "none": return "0px";
     }
   }

@@ -233,23 +233,13 @@ export default function Workspace({
   }
 
   const gengerateTreeChildren = (config:TreeConfig,view:ParentPosition,isFirst:boolean,isLast:boolean,parentLayout:"row" | "column" | "block")=>{
-    let mode:"horizontal" | "vertical" | "left" | "top" | "bottom" | "right" | "none" = "none";
+    let mode: "bottom" | "right" | "none" = "none";
     if(isFirst && isLast){
         mode = "none";
     }else if(isFirst){
       switch(parentLayout){
         case "row":mode = "right";break;
         case "column":mode = "bottom";break;
-      }
-    }else if(isLast){
-      switch(parentLayout){
-        case "row":mode = "left";break;
-        case "column":mode = "top";break;
-      }
-    }else{
-      switch(parentLayout){
-        case "row":mode = "horizontal";break;
-        case "column":mode = "vertical";break;
       }
     }
     switch(config.layout){
