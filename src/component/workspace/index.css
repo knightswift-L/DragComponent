@@ -14,7 +14,7 @@
     border: 2px greenyellow solid;
     border-radius: 5px;
     box-sizing: border-box;
-    cursor: none;
+    pointer-events: none;
 }
 
 .row {
@@ -22,7 +22,6 @@
     flex-direction: row;
     height: 100%;
     width: 100%;
-    flex-shrink: 0;
     overflow: hidden;
     box-sizing: border-box;
 

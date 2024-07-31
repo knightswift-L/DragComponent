@@ -1,6 +1,8 @@
 import React, { ReactElement } from "react";
 import { checkPointInArea } from "./util";
 
+const Padding = 5;
+
 class LayoutConfig {
     isLocked: boolean;
     layout: Array<TreeConfig>;
@@ -11,7 +13,7 @@ class LayoutConfig {
     }
 }
 
-export type ParentPosition = { left: number, top: number, width: number, height: number }
+export type ParentPosition = { left: number, top: number, width: number, height: number,paddingLeft:number,paddingRight:number,paddingTop:number,paddingBottom:number }
 export type TreeChild = {
     name: string;
     component: React.ReactElement;
@@ -28,6 +30,10 @@ export class TreeConfig {
     maxWidth: number;
     maxHeight: number;
     minHeight: number;
+    paddingLeft:number = 0;
+    paddingRight:number = 0;
+    paddingTop:number = 0;
+    paddingBottom:number = 0;
     layout: "row" | "column" | "block";
     children?: Array<TreeConfig>;
     child?: TreeChild;
@@ -98,19 +104,7 @@ export class TreeConfig {
     getCurrentPosition = (view: ParentPosition): ParentPosition => {
         const realLeft = this.getLeft(view.width) + view.left;
         const realTop = this.getTop(view.height) + view.top;
-        return { left: realLeft, top: realTop, width: this.getWidth(view.width), height: this.getHeight(view.height) }
-    }
-
-    checkedMoveIn = (view: ParentPosition, position: { x: number, y: number }): boolean => {
-        const realLeft = this.getLeft(view.width) + view.left;
-        const realRight = this.getRight(view.width) + view.left;
-        const realTop = this.getTop(view.height) + view.top;
-        const realBottom = this.getBottom(view.height) + view.top;
-        const area = [{ x: realLeft, y: realTop }, { x: realRight, y: realTop }, { x: realRight, y: realBottom }, { x: realLeft, y: realBottom }];
-        if (checkPointInArea(position, area)) {
-            return true;
-        }
-        return false;
+        return { left: realLeft, top: realTop, width: this.getWidth(view.width), height: this.getHeight(view.height),paddingBottom:this.paddingBottom,paddingLeft:this.paddingLeft,paddingTop:this.paddingTop,paddingRight:this.paddingRight}
     }
 }
 
@@ -150,13 +144,13 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 }
             }
         })
-    } else {
+    } else {let newComponent: TreeConfig | null;
         if (config.layout === "row") {
             const child = parent.child!;
             parent.child = undefined;
             parent.layout = config.layout;
             parent.children = [];
-            let newComponent: TreeConfig | null;
+            
             if (config.position === 0) {
                 newComponent = new TreeConfig({
                     parent: parent,
@@ -183,8 +177,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: config.top / view.height,
                     bottom: config.bottom / view.height,
-                    left: 0.5,
-                    right: 1,
+                    left: config.right/view.width,
+                    right: config.right/view.width + (config.right - config.left)/view.width,
                     minHeight: 100 / view.height,
                     maxHeight: 1,
                     minWidth: 100 / view.width,
@@ -200,8 +194,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: config.top / view.height,
                     bottom: config.bottom / view.height,
-                    left: 0,
-                    right: config.left / view.width,
+                    left: config.left/view.width - (config.right - config.left)/view.width,
+                    right: config.left/view.width,
                     minHeight: 100 / view.height,
                     maxHeight: 1,
                     minWidth: 100 / view.width,
@@ -232,13 +226,12 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 })
                 parent.children.push(newComponent)
             }
-            return newComponent
+           
         } else {
             const child = parent.child!;
             parent.child = undefined;
             parent.layout = config.layout;
             parent.children = [];
-            let newComponent: TreeConfig | null;
             if (config.position === 0) {
                 newComponent = new TreeConfig({
                     parent: parent,
@@ -265,8 +258,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: config.bottom / view.height,
                     bottom: 1,
-                    left: 0,
-                    right: 1,
+                    left: config.left / view.width,
+                    right: config.right / view.width,
                     minHeight: 100 / view.height,
                     maxHeight: 1 - 100 / view.height,
                     minWidth: 100 / view.width,
@@ -282,8 +275,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: 0,
                     bottom: config.top / view.height,
-                    left: 0,
-                    right: 1,
+                    left: config.left / view.width,
+                    right: config.right / view.width,
                     minHeight: 100 / view.height,
                     maxHeight: 1 - 100 / view.height,
                     minWidth: 100 / view.width,
@@ -314,8 +307,17 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 })
                 parent.children.push(newComponent)
             }
-            return newComponent;
         }
+        if(parent.children){
+            if(parent.layout === 'row'){
+                parent.children[0].paddingRight = Padding;
+                parent.children[1].paddingLeft = Padding;
+            }else if(parent.layout === "column"){
+                parent.children[0].paddingBottom = Padding;
+                parent.children[1].paddingTop = Padding;
+            }
+        }
+        return newComponent
     }
 
 }

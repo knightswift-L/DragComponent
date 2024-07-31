@@ -179,15 +179,15 @@ export default function ResizeBox({
       onMouseMove={handleMove}
       draggable={false}
       style={{
-        height: height + "px",
-        width: width + "px",
+        height:height + "px",
+        width:width + "px",
         cursor: cursorType,
         padding: getPadding(),
         boxSizing: "border-box",
         display: 'flex',
         flexDirection: display,
         flexShrink: "0",
-        overflow: "hidden"
+        overflow: "clip"
       }}
     >
       {children}
