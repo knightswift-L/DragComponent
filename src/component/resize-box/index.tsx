@@ -152,13 +152,16 @@ export default function ResizeBox({
         cursor: cursorType,
         padding: getPadding(),
         boxSizing: "border-box",
-        display: 'flex',
-        flexDirection: display ?? "column",
-        flexShrink: "0",
-        overflow: "clip"
+        overflow: "hidden"
       }}
     >
-      {children}
+      <div style={{width:'100%',height:"100%", display: 'flex',
+        flexDirection: display ?? "column",
+        flexShrink: 0,
+        overflow: "hidden"}}>
+           {children}
+        </div>
+     
     </div>
   );
 }

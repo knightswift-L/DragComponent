@@ -258,7 +258,7 @@ export default function Workspace({
             tree.children![0].bottom = (firstMinHeight/realPosition.innerHeight)
             tree.children![1].top = tree.children![0].bottom;
             }else if(tree.children![1].getHeight(realPosition.innerHeight) < lastMinHeight){
-            tree.children![0].bottom =1- (lastMinHeight/realPosition.innerHeight)
+            tree.children![0].bottom = 1- (lastMinHeight/realPosition.innerHeight)
             tree.children![1].top = tree.children![0].bottom;
             }
             tree.children!.forEach((item)=>updateChildrenSize(item,realPosition))

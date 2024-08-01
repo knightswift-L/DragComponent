@@ -141,7 +141,7 @@ export class TreeConfig {
                 const result = item.getMinHeight();
                 max = result > max ? result : max;
             }
-            if(this.parent && this.parent!.children!.findIndex((item)=>item.key === this.key) === 0){
+            if(this.parent && this.parent.layout === "column" && this.parent!.children!.findIndex((item)=>item.key === this.key) === 0){
                return max + Padding;
             }
             return max;
@@ -154,8 +154,6 @@ export class TreeConfig {
         }
         if(this.parent && this.parent.layout === "column" && this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
             result = result + Padding;
-        }else{
-            
         }
         return result;
     }
