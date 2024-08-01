@@ -242,12 +242,13 @@ export default function Workspace({
     if(tree.layout === "row"){
              let firstMinWidth = tree.children![0].getMinWidth();
              let lastMinWidth = tree.children![1].getMinWidth();
+             console.log("key",tree.key,firstMinWidth)
              if(tree.children![0].getWidth(realPosition.innerWidth) < firstMinWidth){
               tree.children![0].right = (firstMinWidth/realPosition.innerWidth)
               tree.children![1].left = tree.children![0].right;
              }else if(tree.children![1].getWidth(realPosition.innerWidth) < lastMinWidth){
-              tree.children![0].right = 1 - (lastMinWidth/realPosition.innerWidth)
-              tree.children![1].left = lastMinWidth / realPosition.innerWidth;
+              tree.children![0].right =1- (lastMinWidth/realPosition.innerWidth);
+              tree.children![1].left = tree.children![0].right;
              }
              tree.children!.forEach((item)=>updateChildrenSize(item,realPosition))
        }else if(tree.layout === "column"){
@@ -258,7 +259,7 @@ export default function Workspace({
             tree.children![1].top = tree.children![0].bottom;
             }else if(tree.children![1].getHeight(realPosition.innerHeight) < lastMinHeight){
             tree.children![0].bottom =1- (lastMinHeight/realPosition.innerHeight)
-            tree.children![1].top = lastMinHeight / realPosition.innerHeight;
+            tree.children![1].top = tree.children![0].bottom;
             }
             tree.children!.forEach((item)=>updateChildrenSize(item,realPosition))
        }
@@ -294,6 +295,8 @@ export default function Workspace({
         case "column":mode = "bottom";break;
       }
     }
+    console.log("key",config.key,"MinWidth",config.getMinWidth());
+    console.log(items[0])
     switch(config.layout){
      case "block":{
        return <ResizeBox
@@ -319,6 +322,7 @@ export default function Workspace({
              setItems([...items]);
             }
           }}>delete</button>
+          {config.key}
         </div>
         {config.child!.component}
         </></ResizeBox>
