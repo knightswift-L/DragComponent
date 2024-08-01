@@ -16,7 +16,8 @@ export default function ResizeBox({
   maxWidth,
   onResize,
   children,
-  display
+  display,
+  k
 }: {
   resizeMode: "bottom" | "right" | "none";
   minHeight: number;
@@ -29,14 +30,15 @@ export default function ResizeBox({
   children: React.ReactElement;
   marginLeft?: number;
   marginBottom?: number;
-  display?: "row" | "column"
+  display?: "row" | "column",
+  k:string
 }) {
   const refContainer = useRef<HTMLDivElement | null>(null);
   const [cursorType, setCursorType] = useState<
     "col-resize" | "row-resize" | "auto"
   >("auto");
-  const [width, setWidth] = useState<number>(originalWidth >minWidth ? originalWidth :minWidth);
-  const [height, setHeight] = useState<number>(originalHeight > minHeight ? originalHeight :minHeight);
+  const [width, setWidth] = useState<number>(originalWidth);
+  const [height, setHeight] = useState<number>(originalHeight);
   const [allowResize, setAllowResize] = useState<boolean>(false);
   const [resizeStart, setResizeStart] = useState<"start" | "end" | "none">(
     "none"
@@ -97,6 +99,7 @@ export default function ResizeBox({
       minWidth,
       resizeStart,
       onResize,
+      k
     ]
   );
 

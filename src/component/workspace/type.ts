@@ -73,7 +73,19 @@ export class TreeConfig {
 
     getMinWidth = (): number => {
         if (this.layout === "block") {
-            return 100;
+            if(!this.parent){
+                return 100;
+            }
+            
+            if(this.parent.layout === 'row'){
+                if(this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
+                    return 110;
+                }else{
+                    return 100;
+                }
+            }else{
+                return 100;
+            }
         }
 
         if (this.layout === "column") {
@@ -82,14 +94,19 @@ export class TreeConfig {
                 const result = item.getMinWidth();
                 max = result > max ? result : max;
             }
-            return max + Padding;
+            if(this.parent && this.parent.layout === "row" && this.parent!.children!.findIndex((item)=>item.key === this.key) === 0){
+                return max + Padding;
+             }
+             return max;
         }
 
         let result = 0;
         for (const item of this.children!) {
             result += item.getMinWidth();
+        } 
+        if(this.parent && this.parent.layout === "row" && this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
+            result +=  Padding;
         }
-        result = result + (this.children!.length) * Padding; 
         return result;
 
     }
@@ -102,7 +119,20 @@ export class TreeConfig {
 
     getMinHeight = (): number => {
         if (this.layout === "block") {
-            return 100;
+            if(!this.parent){
+                return 100;
+            }
+            
+            if(this.parent.layout === 'row'){
+                return 100;
+            }else{
+                if(this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
+                    return 110;
+                }else{
+                    return 100;
+                }
+                
+            }
         }
 
         if (this.layout === "row") {
@@ -111,14 +141,22 @@ export class TreeConfig {
                 const result = item.getMinHeight();
                 max = result > max ? result : max;
             }
+            if(this.parent && this.parent!.children!.findIndex((item)=>item.key === this.key) === 0){
+               return max + Padding;
+            }
             return max;
         }
 
         let result = 0;
         for (const item of this.children!) {
             result += item.getMinHeight();
+            
         }
-        result = result + (this.children!.length) * Padding; 
+        if(this.parent && this.parent.layout === "column" && this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
+            result = result + Padding;
+        }else{
+            
+        }
         return result;
     }
 
@@ -147,7 +185,6 @@ export class TreeConfig {
             return;
         }
         const anotherOne = this.parent.children!.filter((item)=>item.key !== this.key)[0];
-        console.log(anotherOne);
         if(anotherOne.layout === "block"){
             this.parent.child = anotherOne.child;
             this.parent.children = undefined;

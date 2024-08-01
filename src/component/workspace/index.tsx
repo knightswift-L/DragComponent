@@ -35,7 +35,22 @@ export default function Workspace({
     }
   },[])
 
+  const findTarget = (tree:TreeConfig,view:ParentPosition,target:string):{target:TreeConfig,view:ParentPosition} | null=>{
+    if(tree.key === target){
+      return {target:tree,view:tree.getCurrentPosition(view)}
+    }else if(tree.child){
+      return null;
+    }
+     const realPosition = tree.getCurrentPosition(view);
+    for(const item of tree.children!){
+      let result = findTarget(item,realPosition,target);
+      if(result){
+        return result;
+      }
+    }
 
+    return null;
+}
   const handleOnDrap = useCallback(
     (ev: React.DragEvent) => {
       ev.preventDefault();
@@ -45,22 +60,7 @@ export default function Workspace({
       if(targetPanel === ""){
         return;
       }
-      const findTarget = (tree:TreeConfig,view:ParentPosition,target:string):{target:TreeConfig,view:ParentPosition} | null=>{
-          if(tree.key === target){
-            return {target:tree,view:tree.getCurrentPosition(view)}
-          }else if(tree.child){
-            return null;
-          }
-           const realPosition = tree.getCurrentPosition(view);
-          for(const item of tree.children!){
-            let result = findTarget(item,realPosition,target);
-            if(result){
-              return result;
-            }
-          }
-
-          return null;
-      }
+     
       
       if(config && config.target === "root"){
         let tree =  generateTreeConfig(null,{width:width,height:height,left:0,top:0,paddingBottom:0,paddingLeft:0,paddingRight:0,paddingTop:0,innerHeight:height,innerWidth:width},config,panels[targetPanel](),targetPanel);
@@ -71,7 +71,7 @@ export default function Workspace({
           generateTreeConfig(result.target,result.view,config,panels[targetPanel](),targetPanel);
           setItems([...items])
         }
-        console.log(items[0])
+        
       }
       ev.dataTransfer.clearData();
     },
@@ -139,7 +139,7 @@ export default function Workspace({
                     width:realPosition.innerWidth! + "px",
                     height:(realPosition.innerHeight! - Padding)/2 + Padding + "px",
                    })
-                   console.log(realPosition.innerWidth);
+                   
                    setConfig({
                     target:config.key,
                     left:0,
@@ -220,21 +220,50 @@ export default function Workspace({
       return;
     }
     
-    const index = parent.children!.findIndex((item)=>item.key === config.key);
-    if(index === 0){
-      parent.children[0].bottom = parent.children[0].bottom + scaleHeight / view.innerHeight!;
-      parent.children[0].right = parent.children[0].right + scaleWidth / view.innerWidth!;
-      parent.children[1].top = parent.children[1].top + scaleHeight / view.innerHeight!;
-      parent.children[1].left = parent.children[1].left + scaleWidth / view.innerWidth!;
-    }else{
-      parent.children[0].bottom = parent.children[0].bottom +scaleHeight / view.innerHeight!;
-      parent.children[0].right = parent.children[0].right + scaleWidth / view.innerWidth!;
-      parent.children[1].top = parent.children[1].top + scaleHeight / view.innerHeight!;
-      parent.children[1].left = parent.children[1].left + scaleWidth / view.innerWidth!;
+    if(scaleHeight === 0 && scaleWidth === 0){
+      return;
     }
-    setItems([...items]);
+    if(scaleWidth !== 0){
+      parent.children[0].right = parent.children[0].right + scaleWidth / view.innerWidth!;
+      parent.children[1].left = parent.children[0].right;
+    }else{
+      parent.children[0].bottom = parent.children[0].bottom + scaleHeight / view.innerHeight!;
+      parent.children[1].top = parent.children[0].bottom;
+    }
+    updateChildrenSize(parent.children![0],view)
+    updateChildrenSize(parent.children![1],view)
+    setItems([...items]);  
+    
   }
 
+
+  const updateChildrenSize = (tree:TreeConfig,view:ParentPosition)=>{
+    const realPosition = tree.getCurrentPosition(view);   
+    if(tree.layout === "row"){
+             let firstMinWidth = tree.children![0].getMinWidth();
+             let lastMinWidth = tree.children![1].getMinWidth();
+             if(tree.children![0].getWidth(realPosition.innerWidth) < firstMinWidth){
+              tree.children![0].right = (firstMinWidth/realPosition.innerWidth)
+              tree.children![1].left = tree.children![0].right;
+             }else if(tree.children![1].getWidth(realPosition.innerWidth) < lastMinWidth){
+              tree.children![0].right = 1 - (lastMinWidth/realPosition.innerWidth)
+              tree.children![1].left = lastMinWidth / realPosition.innerWidth;
+             }
+             tree.children!.forEach((item)=>updateChildrenSize(item,realPosition))
+       }else if(tree.layout === "column"){
+            let firstMinHeight = tree.children![0].getMinHeight();
+            let lastMinHeight = tree.children![1].getMinHeight();
+            if(tree.children![0].getHeight(realPosition.innerHeight) < firstMinHeight){
+            tree.children![0].bottom = (firstMinHeight/realPosition.innerHeight)
+            tree.children![1].top = tree.children![0].bottom;
+            }else if(tree.children![1].getHeight(realPosition.innerHeight) < lastMinHeight){
+            tree.children![0].bottom =1- (lastMinHeight/realPosition.innerHeight)
+            tree.children![1].top = lastMinHeight / realPosition.innerHeight;
+            }
+            tree.children!.forEach((item)=>updateChildrenSize(item,realPosition))
+       }
+     
+  }
 
   const getMaxWidth = (target:TreeConfig,view:ParentPosition)=>{
     if(!target.parent){
@@ -268,6 +297,7 @@ export default function Workspace({
     switch(config.layout){
      case "block":{
        return <ResizeBox
+        k={config.key}
         key={config.key}
         resizeMode={mode}
         maxHeight={getMaxHeight(config,view)}
@@ -286,7 +316,6 @@ export default function Workspace({
               setItems([]);
             }else{
              config.delete();
-             console.log(items[0])
              setItems([...items]);
             }
           }}>delete</button>
@@ -296,7 +325,10 @@ export default function Workspace({
      }
      case "column":{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
-      return <ResizeBox key={config.key} resizeMode={mode}
+      return <ResizeBox
+      k={config.key}
+      key={config.key}
+      resizeMode={mode}
       maxHeight={getMaxHeight(config, view)}
       minHeight={config.getMinHeight()}
       height={config.getHeight(view.innerHeight)}
@@ -311,7 +343,10 @@ export default function Workspace({
      }
      case 'row':{
       const children:Array<React.ReactElement> = config.children!.map((item,index)=>gengerateTreeChildren(item,config.getCurrentPosition(view),index === 0,index === config.children!.length-1,config.layout))
-      return <ResizeBox key={config.key} resizeMode={mode}
+      return <ResizeBox
+       key={config.key}
+       k={config.key}
+       resizeMode={mode}
       maxHeight={getMaxHeight(config,view)}
       minHeight={config.getMinHeight()}
       height={config.getHeight(view.innerHeight)}
