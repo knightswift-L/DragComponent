@@ -101,7 +101,7 @@ export default function ResizeBox({
 
   const handleDrag = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
-      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.effectAllowed = "copy";
       e.dataTransfer.setData("text/plain", name!);
       const image = new Image();
       image.src = "/assets/move.svg";
@@ -131,7 +131,7 @@ export default function ResizeBox({
         overflow: "hidden"
       }}
     >
-      {children}
+     {children}
     </div>
   );
 }
