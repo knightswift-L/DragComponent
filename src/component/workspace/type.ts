@@ -1,18 +1,19 @@
 import React, { ReactElement } from "react";
 
 export const Padding = 10;
+export const MinWidth = 100;
+export const MinHeight = 100;
+// class LayoutConfig {
+//     isLocked: boolean;
+//     layout: Array<TreeConfig>;
 
-class LayoutConfig {
-    isLocked: boolean;
-    layout: Array<TreeConfig>;
+//     constructor(isLocked: boolean, layout: Array<TreeConfig>) {
+//         this.layout = layout;
+//         this.isLocked = isLocked;
+//     }
+// }
 
-    constructor(isLocked: boolean, layout: Array<TreeConfig>) {
-        this.layout = layout;
-        this.isLocked = isLocked;
-    }
-}
-
-export type ParentPosition = { left: number, top: number, width: number, height: number, paddingLeft: number, paddingRight: number, paddingTop: number, paddingBottom: number, innerHeight: number, innerWidth: number }
+export type ParentPosition = { left: number, top: number, width: number, height: number }
 export type TreeChild = {
     name: string;
     component: React.ReactElement;
@@ -25,10 +26,6 @@ export class TreeConfig {
     right: number;
     top: number;
     bottom: number;
-    paddingLeft: number = 0;
-    paddingRight: number = 0;
-    paddingTop: number = 0;
-    paddingBottom: number = 0;
     layout: "row" | "column" | "block";
     children?: Array<TreeConfig>;
     child?: TreeChild;
@@ -51,41 +48,68 @@ export class TreeConfig {
         this.children = option?.children;
     }
 
+
+
+    get isFirst(){
+        if(!this.parent){
+            return true;
+        }
+        return this.parent.children!.findIndex((item)=>item.key === this.key) === 0;
+    }
+
     getLeft = (viewWidth: number): number => {
-        return this.left * viewWidth;
+        if(!this.parent){
+            return this.left * viewWidth;
+        }
+
+        if(this.parent.layout === "column"){
+            return this.left * viewWidth;
+        }
+
+        return this.isFirst ? this.left * viewWidth : this.left * viewWidth + Padding/2;
     }
 
     getRight = (viewWidth: number): number => {
-        return this.right * viewWidth;
+        if(!this.parent){
+            return this.right * viewWidth;
+        }
+
+        if(this.parent.layout === "column"){
+            return this.right * viewWidth;
+        }
+
+        return this.isFirst ? this.right * viewWidth - Padding/2 : this.right * viewWidth;
     }
 
     getTop = (viewHeight: number): number => {
-        return this.top * viewHeight;
+        if(!this.parent){
+            return this.top * viewHeight;
+        }
+
+        if(this.parent.layout === "row"){
+            return this.top * viewHeight;
+        }
+        return this.isFirst ? this.top * viewHeight: this.top * viewHeight + Padding/2;
     }
 
     getBottom = (viewHeight: number): number => {
-        return this.bottom * viewHeight
+        if(!this.parent){
+            return this.bottom * viewHeight;
+        }
+
+        if(this.parent.layout === "row"){
+            return this.bottom * viewHeight;
+        }
+        return this.isFirst ? this.bottom * viewHeight - Padding/2 :this.bottom * viewHeight;
     }
 
     getWidth = (viewWidth: number): number => {
-        return (this.right - this.left) * viewWidth
+        return this.getRight(viewWidth) - this.getLeft(viewWidth);
     }
 
     getMinWidth = (): number => {
         if (this.layout === "block") {
-            if(!this.parent){
-                return 100;
-            }
-            
-            if(this.parent.layout === 'row'){
-                if(this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
-                    return 110;
-                }else{
-                    return 100;
-                }
-            }else{
-                return 100;
-            }
+            return 100;
         }
 
         if (this.layout === "column") {
@@ -94,9 +118,6 @@ export class TreeConfig {
                 const result = item.getMinWidth();
                 max = result > max ? result : max;
             }
-            if(this.parent && this.parent.layout === "row" && this.parent!.children!.findIndex((item)=>item.key === this.key) === 0){
-                return max + Padding;
-             }
              return max;
         }
 
@@ -104,9 +125,8 @@ export class TreeConfig {
         for (const item of this.children!) {
             result += item.getMinWidth();
         } 
-        if(this.parent && this.parent.layout === "row" && this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
-            result +=  Padding;
-        }
+        result +=  Padding;
+
         return result;
 
     }
@@ -114,25 +134,12 @@ export class TreeConfig {
 
 
     getHeight = (viewHeight: number): number => {
-        return (this.bottom - this.top) * viewHeight
+        return this.getBottom(viewHeight) - this.getTop(viewHeight);
     }
 
     getMinHeight = (): number => {
         if (this.layout === "block") {
-            if(!this.parent){
-                return 100;
-            }
-            
-            if(this.parent.layout === 'row'){
-                return 100;
-            }else{
-                if(this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
-                    return 110;
-                }else{
-                    return 100;
-                }
-                
-            }
+            return 100;
         }
 
         if (this.layout === "row") {
@@ -140,9 +147,6 @@ export class TreeConfig {
             for (const item of this.children!) {
                 const result = item.getMinHeight();
                 max = result > max ? result : max;
-            }
-            if(this.parent && this.parent.layout === "column" && this.parent!.children!.findIndex((item)=>item.key === this.key) === 0){
-               return max + Padding;
             }
             return max;
         }
@@ -152,29 +156,19 @@ export class TreeConfig {
             result += item.getMinHeight();
             
         }
-        if(this.parent && this.parent.layout === "column" && this.parent.children!.findIndex((item)=>item.key === this.key) === 0){
-            result = result + Padding;
-        }
+        result = result + Padding;
         return result;
     }
 
 
     getCurrentPosition = (view: ParentPosition): ParentPosition => {
-        const realLeft = this.getLeft(view.innerWidth) + view.left + view.paddingLeft;
-        const realTop = this.getTop(view.innerHeight) + view.top + view.paddingTop;
-        const innerWidth = this.getWidth(view.innerWidth) - this.paddingLeft - this.paddingRight;
-        const innerHeight = this.getHeight(view.innerHeight) - this.paddingTop - this.paddingBottom;
+        const realLeft = this.getLeft(view.width) + view.left;
+        const realTop = this.getTop(view.height) + view.top;
         return {
             left: realLeft,
             top: realTop,
-            width: this.getWidth(view.innerWidth),
-            height: this.getHeight(view.innerHeight),
-            paddingBottom: this.paddingBottom,
-            paddingLeft: this.paddingLeft,
-            paddingTop: this.paddingTop,
-            paddingRight: this.paddingRight,
-            innerHeight,
-            innerWidth,
+            width: this.getWidth(view.width),
+            height: this.getHeight(view.height),
         }
     }
 
@@ -216,10 +210,10 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
         return new TreeConfig({
             parent: parent ? parent : undefined,
             key: `key-${key}-${getRandom()}`,
-            top: config.top / view.innerHeight,
-            bottom: config.bottom / view.innerHeight,
-            left: config.left / view.innerWidth,
-            right: config.right / view.innerWidth,
+            top: config.top / view.height,
+            bottom: config.bottom / view.height,
+            left: config.left / view.width,
+            right: config.right / view.width,
             layout: config.layout,
             option: {
                 child: {
@@ -240,10 +234,10 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 newComponent = new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.top / view.innerHeight,
-                    bottom: config.bottom / view.innerHeight,
-                    left: config.left / view.innerWidth,
-                    right: config.right / view.innerWidth,
+                    top: config.top / view.height,
+                    bottom: config.bottom / view.height,
+                    left: config.left / view.width,
+                    right: config.right / view.width,
                     layout: "block",
                     option: {
                         child: {
@@ -256,9 +250,9 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 parent.children.push(new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.top / view.innerHeight,
-                    bottom: config.bottom / view.innerHeight,
-                    left: config.right / view.innerWidth,
+                    top: config.top / view.height,
+                    bottom: config.bottom / view.height,
+                    left: config.right / view.width,
                     right: 1,
                     layout: 'block',
                     option: {
@@ -272,7 +266,7 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     top: 0,
                     bottom: 1,
                     left: 0,
-                    right: config.left / view.innerWidth,
+                    right: config.left / view.width,
                     layout: 'block',
                     option: {
                         child
@@ -283,7 +277,7 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     key: `key-${key}-${getRandom()}`,
                     top: 0,
                     bottom: 1,
-                    left: config.left / view.innerWidth,
+                    left: config.left / view.width,
                     right: 1,
                     layout: "block",
                     option: {
@@ -306,7 +300,7 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
                     top: 0,
-                    bottom: config.bottom / view.innerHeight,
+                    bottom: config.bottom / view.height,
                     left: 0,
                     right: 1,
                     layout: "block",
@@ -321,7 +315,7 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 parent.children.push(new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.bottom / view.innerHeight,
+                    top: config.bottom / view.height,
                     bottom: 1,
                     left: 0,
                     right: 1,
@@ -335,7 +329,7 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
                     top: 0,
-                    bottom: config.top / view.innerHeight,
+                    bottom: config.top / view.height,
                     left: 0,
                     right: 1,
                     layout: 'block',
@@ -346,8 +340,8 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                 newComponent = new TreeConfig({
                     parent: parent,
                     key: `key-${key}-${getRandom()}`,
-                    top: config.top / view.innerHeight,
-                    bottom: config.bottom / view.innerHeight,
+                    top: config.top / view.height,
+                    bottom: config.bottom / view.height,
                     left: 0,
                     right: 1,
                     layout: "block",
@@ -359,13 +353,6 @@ export function generateTreeConfig(parent: TreeConfig | null, view: ParentPositi
                     }
                 })
                 parent.children.push(newComponent)
-            }
-        }
-        if (parent.children) {
-            if (parent.layout === 'row') {
-                parent.children[0].paddingRight = Padding;
-            } else if (parent.layout === "column") {
-                parent.children[0].paddingBottom = Padding;
             }
         }
         return newComponent

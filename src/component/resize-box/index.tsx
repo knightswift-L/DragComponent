@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 const distance: number = 20;
 type ResizeCallBack = (param: {
-  width: number;
-  height: number;
   scaleWidth: number;
   scaleHeight: number;
 }) => void;
@@ -10,28 +8,20 @@ export default function ResizeBox({
   resizeMode,
   width: originalWidth,
   height: originalHeight,
-  minHeight,
-  minWidth,
-  maxHeight,
-  maxWidth,
   onResize,
   children,
   display,
-  k
+  divider,
+  name
 }: {
-  resizeMode: "bottom" | "right" | "none";
-  minHeight: number;
-  maxHeight: number;
-  minWidth: number;
-  maxWidth: number;
+  resizeMode: "vertical" | "horizontal" | "none";
   height: number;
   width: number;
   onResize: ResizeCallBack;
   children: React.ReactElement;
-  marginLeft?: number;
-  marginBottom?: number;
   display?: "row" | "column",
-  k:string
+  divider?:number,
+  name?:string
 }) {
   const refContainer = useRef<HTMLDivElement | null>(null);
   const [cursorType, setCursorType] = useState<
@@ -40,9 +30,6 @@ export default function ResizeBox({
   const [width, setWidth] = useState<number>(originalWidth);
   const [height, setHeight] = useState<number>(originalHeight);
   const [allowResize, setAllowResize] = useState<boolean>(false);
-  const [resizeStart, setResizeStart] = useState<"start" | "end" | "none">(
-    "none"
-  );
   useEffect(() => {
     setHeight(originalHeight);
     setWidth(originalWidth);
@@ -52,34 +39,25 @@ export default function ResizeBox({
     (event: React.MouseEvent) => {
       if (refContainer.current && allowResize) {
         if (cursorType === "col-resize") {
-          let tempWidth = width + event.movementX;
           onResize({
-            width: tempWidth > maxWidth  ? maxWidth : (tempWidth < minWidth ? minWidth : tempWidth),
-            height: height,
-            scaleWidth: (tempWidth > maxWidth && tempWidth < width) || (tempWidth < minWidth && tempWidth > width) || (tempWidth < maxWidth && tempWidth > minWidth) ? event.movementX : 0,
+            scaleWidth: event.movementX,
             scaleHeight: 0,
           });
         } else if (cursorType === "row-resize") {
-          let tempHeight = height + event.movementY;
           onResize({
-            width: width,
-            height: tempHeight > maxHeight ? maxHeight : (tempHeight < minHeight ? minHeight : tempHeight),
             scaleWidth: 0,
-            scaleHeight: (tempHeight > maxHeight && tempHeight < height) || (tempHeight < minHeight && tempHeight > height) || (tempHeight > minHeight && tempHeight < maxHeight) ? event.movementY : 0
+            scaleHeight: event.movementY
           });
         }
-      } else if (refContainer.current && !allowResize) {
-        const {right, bottom } =
+      } else if (refContainer.current && !allowResize && divider) {
+        const {top, left } =
           refContainer.current.getBoundingClientRect();
-        if (resizeMode === "bottom" && (bottom - event.clientY < distance && bottom - event.clientY > 0)) {
+        if (resizeMode === "vertical" && (Math.abs(top + divider! - event.clientY) < distance/2)) {
           setCursorType("row-resize");
-          setResizeStart("end");
-        }else if (resizeMode === "right" && (right - event.clientX < distance && right - event.clientX > 0)) {
+        }else if (resizeMode === "horizontal" && (Math.abs(left + divider! - event.clientX) < distance/2)) {
           setCursorType("col-resize");
-          setResizeStart("end")
         } else {
           setCursorType("auto");
-          setResizeStart("none");
         }
       } else {
         setCursorType("auto");
@@ -88,39 +66,30 @@ export default function ResizeBox({
     },
     [
       refContainer,
-      width,
       allowResize,
       cursorType,
-      height,
       resizeMode,
-      maxHeight,
-      maxWidth,
-      minHeight,
-      minWidth,
-      resizeStart,
       onResize,
-      k
+      divider
     ]
   );
 
 
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    if (refContainer.current) {
-      const { left, right, top, bottom } =
+    if (refContainer.current && divider) {
+      const { left, top } =
         refContainer.current.getBoundingClientRect();
       if (
-        (event.clientX - left < 10 && event.clientX - left > 0) ||
-        (right - event.clientX < 10 && right - event.clientX > 0) ||
-        (event.clientY - top < distance && event.clientY - top > 0) ||
-        (bottom - event.clientY < distance && bottom - event.clientY > 0)
+        (Math.abs(top + divider! - event.clientY) < distance/2 ) ||
+        (Math.abs(left + divider! - event.clientX) < distance/2)
       ) {
         setAllowResize(true);
       } else {
         setAllowResize(false);
       }
     }
-  }, []);
+  }, [divider]);
   const handleMouseUp = useCallback(() => {
     setAllowResize(false);
   }, []);
@@ -130,38 +99,36 @@ export default function ResizeBox({
     setCursorType("auto");
   }, []);
 
+  const handleDrag = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.setData("text/plain", name!);
+    },
+    [name]
+  );
 
-  const getPadding = () => {
-    switch (resizeMode) {
-      case "bottom": return "0px 0px 10px 0px";
-      case "right": return "0px 10px 0px 0px";
-      case "none": return "0px";
-    }
-  }
   return (
     <div
       ref={refContainer}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMove}
-      draggable={false}
+      onMouseDown={ resizeMode !== "none" ? handleMouseDown : undefined}
+      onMouseUp={ resizeMode !== "none" ? handleMouseUp :undefined}
+      onMouseLeave={ resizeMode !== "none" ? handleMouseLeave:undefined}
+      onMouseMove={ resizeMode !== "none" ? handleMove:undefined}
+      draggable={Boolean(name)}
+      onDragStart={name ? handleDrag : undefined}
       style={{
         height:height + "px",
         width:width + "px",
-        cursor: cursorType,
-        padding: getPadding(),
         boxSizing: "border-box",
+        display: 'flex',
+        flexDirection: display ?? "column",
+        justifyContent:"space-between",
+        flexShrink: 0,
+        cursor: cursorType,
         overflow: "hidden"
       }}
     >
-      <div style={{width:'100%',height:"100%", display: 'flex',
-        flexDirection: display ?? "column",
-        flexShrink: 0,
-        overflow: "hidden"}}>
-           {children}
-        </div>
-     
+      {children}
     </div>
   );
 }

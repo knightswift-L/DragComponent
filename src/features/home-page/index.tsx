@@ -11,7 +11,7 @@ export default function HomePage() {
   return (
     <div className="pageContainer">
       <div className="navigationBar">
-        {Object.keys(panels).map((e)=><WorkItem key={e} target="WorkSpace" targetPanel={e}>
+        {Object.keys(panels).map((e)=><WorkItem key={e} targetPanel={e}>
          <p>{e}</p>
         </WorkItem>)}
       </div>

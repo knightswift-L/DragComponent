@@ -1,20 +1,19 @@
 import React, { useCallback } from "react";
 
 export default function WorkItem({
-  target,
   targetPanel,
   children,
 }: {
-  target: string;
   children: React.ReactElement;
   targetPanel: string
 }) {
   const handleDrag = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.setData("text", targetPanel);
+      e.dataTransfer.dropEffect = "copy";
+      e.dataTransfer.setData("text/plain", targetPanel);
     },
-    [target, targetPanel]
+    [targetPanel]
   );
 
   return (
