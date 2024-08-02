@@ -101,8 +101,11 @@ export default function ResizeBox({
 
   const handleDrag = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
-      e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", name!);
+      const image = new Image();
+      image.src = "/assets/move.svg";
+      e.dataTransfer.setDragImage(image,32,32);
     },
     [name]
   );

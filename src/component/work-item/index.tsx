@@ -1,5 +1,4 @@
 import React, { useCallback } from "react";
-
 export default function WorkItem({
   targetPanel,
   children,
@@ -9,9 +8,12 @@ export default function WorkItem({
 }) {
   const handleDrag = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
+      
       e.dataTransfer.effectAllowed = "copy";
-      e.dataTransfer.dropEffect = "copy";
       e.dataTransfer.setData("text/plain", targetPanel);
+      const image = new Image();
+      image.src = "/assets/add.svg";
+      e.dataTransfer.setDragImage(image,32,32);
     },
     [targetPanel]
   );

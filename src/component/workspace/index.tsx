@@ -23,6 +23,7 @@ export default function Workspace({
   const container = useRef<HTMLDivElement | null>(null);
   const [rectStyle, setRectStyle] = useState<{ [key: string]: string }>({
     position: "absolute",
+    opacity:"0"
   });
   const [config, setConfig] = useState<ComponentConfig | null>(null);
   const { width, height } = useResize(container);
@@ -132,7 +133,7 @@ export default function Workspace({
         }
         setItems([...items]);
       }
-      // ev.dataTransfer.clearData();
+      ev.dataTransfer.clearData();
     },
     [items, panels, config, width, height, findTarget, rectStyle]
   );
@@ -319,9 +320,10 @@ export default function Workspace({
   );
 
   const handleDragLeave = useCallback(
-    () => {
+    (ev:React.DragEvent) => {
       setLastPosition(null);
       setRectStyle({ ...rectStyle, opacity: "0" });
+      ev.dataTransfer.clearData();
     },
     [rectStyle]
   );
@@ -522,6 +524,9 @@ export default function Workspace({
     >
       {generateTree(items)}
       <div style={rectStyle} draggable={false} className="anchor"></div>
+      <img src="/assets/add.svg" style={{width:"0px",height:"0px",position:"absolute",zIndex:-1}}></img>
+      <img src="/assets/move.svg" style={{width:"0px",height:"0px",position:"absolute",zIndex:-1}}></img>
+
     </div>
   );
 }
