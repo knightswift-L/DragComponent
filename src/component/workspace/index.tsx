@@ -83,6 +83,10 @@ export default function Workspace({
         originalKey = temp[1];
       }
 
+
+      if(config && config.target === originalKey){
+        return ;
+      }
       if (config && config.target === "root") {
         const tree = generateTreeConfig(
           null,
