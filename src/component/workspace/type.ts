@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react";
 
-export const Padding = 10;
+export const Padding = 6;
 export const MinWidth = 100;
 export const MinHeight = 100;
 // class LayoutConfig {

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-const distance: number = 20;
+import MoveIcon from "@/assets/move.svg";
+const distance: number = 30;
 type ResizeCallBack = (param: {
   scaleWidth: number;
   scaleHeight: number;
@@ -12,16 +13,18 @@ export default function ResizeBox({
   children,
   display,
   divider,
-  name
+  name,
+  isNotRoot = false,
 }: {
   resizeMode: "vertical" | "horizontal" | "none";
   height: number;
   width: number;
   onResize: ResizeCallBack;
   children: React.ReactElement;
-  display?: "row" | "column",
-  divider?:number,
-  name?:string
+  display?: "row" | "column";
+  divider?: number;
+  name?: string;
+  isNotRoot?: boolean;
 }) {
   const refContainer = useRef<HTMLDivElement | null>(null);
   const [cursorType, setCursorType] = useState<
@@ -46,15 +49,20 @@ export default function ResizeBox({
         } else if (cursorType === "row-resize") {
           onResize({
             scaleWidth: 0,
-            scaleHeight: event.movementY
+            scaleHeight: event.movementY,
           });
         }
       } else if (refContainer.current && !allowResize && divider) {
-        const {top, left } =
-          refContainer.current.getBoundingClientRect();
-        if (resizeMode === "vertical" && (Math.abs(top + divider! - event.clientY) < distance/2)) {
+        const { top, left } = refContainer.current.getBoundingClientRect();
+        if (
+          resizeMode === "vertical" &&
+          Math.abs(top + divider! - event.clientY) < distance / 2
+        ) {
           setCursorType("row-resize");
-        }else if (resizeMode === "horizontal" && (Math.abs(left + divider! - event.clientX) < distance/2)) {
+        } else if (
+          resizeMode === "horizontal" &&
+          Math.abs(left + divider! - event.clientX) < distance / 2
+        ) {
           setCursorType("col-resize");
         } else {
           setCursorType("auto");
@@ -64,38 +72,32 @@ export default function ResizeBox({
         setAllowResize(false);
       }
     },
-    [
-      refContainer,
-      allowResize,
-      cursorType,
-      resizeMode,
-      onResize,
-      divider
-    ]
+    [refContainer, allowResize, cursorType, resizeMode, onResize, divider]
   );
 
-
-
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    if (refContainer.current && divider) {
-      const { left, top } =
-        refContainer.current.getBoundingClientRect();
-      if (
-        (Math.abs(top + divider! - event.clientY) < distance/2 ) ||
-        (Math.abs(left + divider! - event.clientX) < distance/2)
-      ) {
-        setAllowResize(true);
-      } else {
-        setAllowResize(false);
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent) => {
+      if (refContainer.current && divider) {
+        const { left, top } = refContainer.current.getBoundingClientRect();
+        if (
+          Math.abs(top + divider! - event.clientY) < distance / 2 ||
+          Math.abs(left + divider! - event.clientX) < distance / 2
+        ) {
+          setAllowResize(true);
+        } else {
+          setAllowResize(false);
+        }
       }
-    }
-  }, [divider]);
+    },
+    [divider]
+  );
   const handleMouseUp = useCallback(() => {
     setAllowResize(false);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     setAllowResize(false);
+    console.log("mouseLeave");
     setCursorType("auto");
   }, []);
 
@@ -104,34 +106,45 @@ export default function ResizeBox({
       e.dataTransfer.effectAllowed = "copy";
       e.dataTransfer.setData("text/plain", name!);
       const image = new Image();
-      image.src = "/assets/move.svg";
-      e.dataTransfer.setDragImage(image,32,32);
+      image.src = MoveIcon;
+      e.dataTransfer.setDragImage(image, 32, 32);
     },
     [name]
   );
-
   return (
     <div
       ref={refContainer}
-      onMouseDown={ resizeMode !== "none" ? handleMouseDown : undefined}
-      onMouseUp={ resizeMode !== "none" ? handleMouseUp :undefined}
-      onMouseLeave={ resizeMode !== "none" ? handleMouseLeave:undefined}
-      onMouseMove={ resizeMode !== "none" ? handleMove:undefined}
+      onMouseDown={resizeMode !== "none" ? handleMouseDown : undefined}
+      onMouseUp={resizeMode !== "none" ? handleMouseUp : undefined}
+      onMouseLeave={resizeMode !== "none" ? handleMouseLeave : undefined}
+      onMouseMove={resizeMode !== "none" ? handleMove : undefined}
       draggable={Boolean(name)}
       onDragStart={name ? handleDrag : undefined}
       style={{
-        height:height + "px",
-        width:width + "px",
+        height: height + "px",
+        width: width + "px",
         boxSizing: "border-box",
-        display: 'flex',
-        flexDirection: display ?? "column",
-        justifyContent:"space-between",
         flexShrink: 0,
         cursor: cursorType,
-        overflow: "hidden"
+        overflow: "hidden",
+        pointerEvents: resizeMode === "none" ? "none" : "auto",
+        padding: isNotRoot && resizeMode === "none" ? "12px" : "0px",
+        backgroundColor:resizeMode === "none" ? "purple":"transparent",
+        borderRadius:resizeMode === "none" ? "6px":"0px"
       }}
     >
-     {children}
+      <div
+        style={{
+          height: "100%",
+          width: "100%",
+          flexDirection: display ?? "column",
+          display: "flex",
+          justifyContent: "space-between",
+          pointerEvents:"auto"
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }

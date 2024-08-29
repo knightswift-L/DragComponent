@@ -1,4 +1,5 @@
 import React, { useCallback } from "react";
+import AddIcon from '@/assets/add.svg';
 export default function WorkItem({
   targetPanel,
   children,
@@ -12,7 +13,7 @@ export default function WorkItem({
       e.dataTransfer.effectAllowed = "copy";
       e.dataTransfer.setData("text/plain", targetPanel);
       const image = new Image();
-      image.src = "/assets/add.svg";
+      image.src = AddIcon;
       e.dataTransfer.setDragImage(image,32,32);
     },
     [targetPanel]

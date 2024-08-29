@@ -431,6 +431,7 @@ export default function Workspace({
         return (
           <ResizeBox
             key={config.key}
+            isNotRoot = {Boolean(config.parent)}
             resizeMode={mode}
             height={config.getHeight(view.height)}
             width={config.getWidth(view.width)}
@@ -477,6 +478,7 @@ export default function Workspace({
         return (
           <ResizeBox
             key={config.key}
+            isNotRoot = {Boolean(config.parent)}
             resizeMode={mode}
             height={config.getHeight(view.height)}
             width={config.getWidth(view.width)}
@@ -501,6 +503,7 @@ export default function Workspace({
         return (
           <ResizeBox
             key={config.key}
+            isNotRoot = {Boolean(config.parent)}
             resizeMode={mode}
             height={config.getHeight(view.height)}
             width={config.getWidth(view.width)}
